@@ -132,3 +132,109 @@ This layer survives at any parameterization.
   been conducted as though a single number were on the table.
 - **Structural:** put versus repo. Survives any parameterization. Not settleable
   by verifiable computation.
+
+
+---
+
+# Corrections and completed tests (same day)
+
+## 1. The 16.7x was arithmetic, not a measured sensitivity
+
+Required spread in this implementation is `PD*LGD/T`, linear in LGD by
+construction. The exact form is `-ln(1 - PD*LGD)/T`, essentially linear at these
+magnitudes. So the ratios were never a finding:
+
+```
+     LGD    linear bps    exact bps    ratio vs LGD 5% (linear / exact)
+   5.00%        423.49       432.72         1.000  /  1.000
+   0.50%         42.35        42.44        10.000  / 10.196
+   0.30%         25.41        25.44        16.667  / 17.008
+   0.05%          4.23         4.24       100.000  / 102.158
+```
+
+LGD ratio 5%/0.3% = 16.667. Spread ratio = 16.667. Exact proportionality,
+because the function is proportional. Reporting that as a discovered
+sensitivity would have been circular, and a reader would have said so.
+
+**The defensible claim is stronger.** The quantitative dispute reduces
+analytically to a **single multiplicative parameter that neither side can
+measure directly**. No amount of model sophistication moves the answer; only the
+LGD choice does. The two sides are not disagreeing about mathematics. The
+modelling apparatus surrounding LGD is doing no work in the disagreement at all.
+
+## 2. Criterion 4 PASSES once properly specified. The earlier diagnosis was wrong.
+
+The failure was a comparison error, not an implementation error: discretely
+monitored MC was compared against the **continuous** closed form with no
+continuity correction.
+
+Applying the Broadie-Glasserman-Kou barrier shift `exp(-0.5826*sigma*sqrt(dt))`,
+in a low-PD regime (LTV 45%, sigma 35%, PD 7.09%), 30,000 paths:
+
+```
+  steps        MC     BGK-corrected CF     diff      in s.e.
+     63  0.061467             0.060202  +0.001265      +0.86
+    252  0.064433             0.065352  -0.000919      -0.63
+   1008  0.068433             0.068060  +0.000373      +0.25
+```
+
+**All three agree within sampling error.** The closed form is validated.
+
+Two things this corrects:
+
+- **The 0.29 exponent was a high-PD regime artifact.** At PD 0.847 the mapping
+  from barrier shift to probability change is strongly nonlinear because the
+  outcome is near certain, so the O(sqrt(dt)) asymptotic does not apply. At
+  PD 0.071, `gap/sqrt(dt)` is stable (0.0745, 0.1020, 0.0770) rather than rising
+  monotonically.
+- **The LCG hypothesis was wrong.** The generator was blamed for a wrong
+  exponent. A weak generator produces a level bias, not a wrong convergence
+  rate. Testing the regime discriminated it in one run; blaming the RNG would
+  have led to replacing a component that was never at fault.
+
+## 3. sigma sweep: leverage is saturating and weak at these parameters
+
+```
+   sigma          PD    spread bps    x vs sigma 75%
+     20%    0.269276         134.6            3.15x
+     30%    0.495422         247.7            1.71x
+     40%    0.635889         317.9            1.33x
+     50%    0.725686         362.8            1.17x
+     60%    0.786515         393.3            1.08x
+     75%    0.846976         423.5            1.00x
+     90%    0.886327         443.2            0.96x
+    100%    0.905448         452.7            0.94x
+```
+
+**The two parameters are not comparable in leverage:**
+
+```
+  LGD   5.00% -> 0.30%   (16.7x change)   423.5 -> 25.4 bps    = 16.7x
+  sigma   75% ->   40%   ( 1.9x change)   423.5 -> 317.9 bps   =  1.3x
+```
+
+LGD is exactly proportional. sigma is heavily damped, because at these
+parameters PD is 0.847 and **saturating** toward 1: the barrier is hit almost
+surely, so raising sigma cannot raise PD much. Doubling sigma from 50% to 100%
+moves the spread by 25%.
+
+**This validates the section 3 decision to fix sigma rather than make it a third
+axis** -- but for a better reason than the one recorded there. The original
+rationale was readability. The actual reason is that sigma has little leverage
+in this regime, so the decomposition does not need a second row.
+
+**Caveat, stated:** the insensitivity is a property of being deep in the
+saturated regime at LTV 70% / LLTV 86%. At lower LTV, further from the barrier,
+sigma regains leverage. The day-6 markets are not all at LTV 70%, so this must
+be re-checked per market rather than assumed.
+
+**One combined figure worth recording:**
+
+```
+  sigma 40% AND LGD 0.3%        19.08 bps
+  observed depositor spreads     0-20 bps
+```
+
+Both parameters moved to defensible lower values -- a volatility consistent with
+BTC-collateralized markets rather than 75%, and the Source B LGD -- lands the
+model inside the observed band. No structural change required.
