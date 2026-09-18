@@ -91,3 +91,71 @@ working from an arbitrary subset, and nothing in the response says so.
 
 Given that both sides of this dispute presumably queried this API, this belongs
 with the exposure finding: a thing no reader can verify from the outside.
+
+
+---
+
+## 5. sigma measured, not assigned -- and the gap is 4.06x
+
+`sigma_estimate.py`, committed. Daily closes from CoinGecko, log returns,
+sample stdev annualised by sqrt(365), trailing 365 days. **An independent price
+source deliberately, not the Morpho indexer whose USD prices were found
+defective for 78% of reported exposure.**
+
+```
+  class        proxy            obs   realized   assigned
+  BTC-like     bitcoin          365      44.8%        45%   CONFIRMED
+  ETH-like     ethereum         365      64.3%        60%   close, adopt measured
+  LST / LRT    wrapped-steth    365     107.7%        65%   ANOMALOUS, see below
+  stablecoin   ethena-usde      365       1.7%        10%   assumption was 6x high
+  RWA / PT     --                --          --       15%   not measurable this way
+```
+
+**The LST figure is not adopted.** wstETH should track ETH closely, so 107.7%
+against ETH at 64.3% is implausible and most likely reflects bad points or gaps
+in that series rather than real volatility. It is reported rather than hidden,
+and the assigned 65% is retained on the reasoning that LST volatility is ETH
+volatility plus a small basis. **This needs a cleaner series before publication.**
+
+RWA and PT tokens have no liquid continuous price series and remain an
+assumption, stated as such.
+
+### The consequence: LGD is not the only mis-set parameter
+
+Source A runs its headline at **LTV 70% and sigma 75%**. The dominant real
+market -- cbBTC/USDC, 92% of the Steakhouse Prime vault and the largest genuine
+market in the book -- sits at **LTV 46.9% (measured from 10,100 positions) and
+sigma 44.8% (measured from 365 daily closes)**.
+
+```
+  Source A    LTV 70.0%  sigma 75.0%   PD 0.8470   423.5 bps at LGD 5%
+  cbBTC/USDC  LTV 46.9%  sigma 44.8%   PD 0.2086   104.3 bps at LGD 5%
+                                                   ratio 4.06x
+```
+
+Decomposed, the two inputs interact rather than add:
+
+```
+  LTV 70 -> 46.9 alone (sigma held 75)      1.60x
+  sigma 75 -> 44.8 alone (LTV held 70)      1.24x
+  both together                             4.06x
+```
+
+**A factor of 4.06x sits in LTV and volatility alone, before LGD is touched.**
+Both are now measured rather than assumed. The day-5 conclusion that the dispute
+reduces to a single multiplicative parameter was correct at Source A parameters;
+at the parameters of the market that actually carries the exposure, two further
+inputs carry 4x between them.
+
+And with measured sigma plus the Source B LGD:
+
+```
+  cbBTC parameters, LGD 0.30%     6.26 bps
+  cbBTC parameters, LGD 0.05%     1.04 bps
+  observed depositor spreads      0-20 bps
+```
+
+**The same four guards from `MODEL-SPEC.md` apply to these figures.** LTV and
+sigma here are measured; LGD is still selected, not derived. Nothing here
+establishes which LGD is correct, and the claim remains that the observed band
+is reachable under measured inputs -- not that observed rates are justified.
