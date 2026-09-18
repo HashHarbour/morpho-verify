@@ -64,20 +64,48 @@ Fields captured per event: `marketId`, `caller`, `borrower`, `repaidAssets`,
 `repaidShares`, `seizedAssets`, `badDebtAssets`, `badDebtShares`,
 `blockNumber`, `logIndex`, `transactionHash`, `blockTimestamp`.
 
-Two properties must be verified against the contract ABI and one known event
-**before** bulk extraction, and the finding recorded here:
+Both the assets and shares forms are captured so the conversion is never
+inferred. The assets figure is authoritative for reconciliation.
 
-1. **Per-event or cumulative.** `badDebtAssets` is understood to be the amount
-   realized *by that liquidation*, not a running total. Verify.
-2. **Assets or shares.** Morpho accounts internally in shares. Both
-   `badDebtAssets` and `badDebtShares` are captured so the conversion is never
-   inferred. The assets figure is authoritative for reconciliation.
+### Semantics check — required before bulk extraction
 
-> Realized bad debt reduces the market's `totalSupplyAssets` at the moment of
-> the liquidation. It is realized on-chain and is not reversed by any
-> off-protocol compensation. See `RECONCILIATION.md` §3.
+Two properties are **assumptions, not settled facts**, and must be verified
+against the ABI and against real events before anything is extracted in bulk:
 
-## 4. Decimals
+1. **Per-event or cumulative.** `badDebtAssets` is believed to be the amount
+   realized *by that liquidation*, not a running total.
+2. **Assets or shares.** Morpho accounts internally in shares.
+
+**This check must run against TWO markets, and the reason is that one is
+useless.** An earlier draft specified the Aerodrome market alone, on the
+grounds that its expected value is already known. But that market very likely
+carries a single bad-debt event — and on a single event the per-event and
+cumulative hypotheses produce **identical output**. The check would have passed
+and told us nothing about the property it was designed to test. A test that
+cannot distinguish its two hypotheses is not a test.
+
+Required:
+
+| Market | Role |
+|---|---|
+| Aerodrome cUSDO/USDC, Base (`0x5b347b3d…`) | known expected value; validates magnitude and decimals |
+| Any Ethereum USDC market with **≥2 bad-debt liquidations** | discriminates per-event vs cumulative |
+
+The second market must be identified *before* the check, by counting
+`Liquidate` events with non-zero `badDebtAssets` per market. If no such market
+exists in range, that is itself a finding and must be recorded — it would mean
+the discriminating test is unavailable and the assumption stays open.
+
+**Discriminator:** on a market with successive bad-debt liquidations, a
+per-event field yields independent amounts; a cumulative field yields a
+monotonically non-decreasing sequence where each value contains its
+predecessors. Record which was observed.
+
+Realized bad debt reduces the market's `totalSupplyAssets` at the moment of the
+liquidation. It is realized on-chain and is not reversed by any off-protocol
+compensation. See `RECONCILIATION.md` §3.
+
+## 4. Decimals and numeric storage
 
 **The stored dataset holds raw integer units, exactly as emitted on-chain.**
 No division is performed at extraction time.
@@ -87,9 +115,34 @@ error in this phase, so the dataset never carries a converted number. Any
 human-readable figure is produced at presentation time, from raw units, by code
 that states the decimal count it applied.
 
-Every amount column is stored as a **decimal string**, not a float and not a
-JSON number. Values exceed 2^53 and would lose precision silently as IEEE-754
-doubles — the same class of error the whole project exists to avoid.
+Every amount column is stored as a **decimal string**, never a float and never
+a bare JSON number.
+
+**The reason is shares, not assets.** An earlier draft of this spec justified
+decimal strings by claiming raw USDC amounts exceed 2^53. That is false at any
+realistic size: 2^53 is about 9.007e15, which at 6 dp is roughly **$9 billion
+in a single liquidation**. The justification was wrong even though the decision
+was right, and a falsifiable reason for a correct decision is worse than none —
+it invites a reader to discard the decision along with the argument.
+
+What actually forces decimal strings is Morpho's virtual-shares accounting.
+`SharesMathLib` uses `VIRTUAL_SHARES = 1e6` against `VIRTUAL_ASSETS = 1`, a
+1:1,000,000 baseline, so share quantities run roughly 1e6 times asset
+quantities. A position of raw USDC `A` carries shares on the order of `A * 1e6`,
+which crosses 2^53 at:
+
+```
+9.007e15 / 1e6 / 1e6  =  ~9,007 USDC
+```
+
+**Any position above roughly $9,000 has share values outside float-safe range.**
+Since `badDebtShares` and `repaidShares` are captured (§3), and since most
+positions of interest are far above $9,000, IEEE-754 would lose precision
+silently on the share columns — the exact class of error this project exists to
+avoid, arriving through the serializer rather than the arithmetic.
+
+Applied uniformly to asset columns too, so no column's type depends on a
+size assumption that could change.
 
 ## 5. Canonical ordering
 

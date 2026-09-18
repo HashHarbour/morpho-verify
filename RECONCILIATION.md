@@ -59,7 +59,7 @@ refer to the post-compensation position. A correct extraction returns
 **Therefore:** an extracted value of 0 for this market is a **FAIL**, not a
 confirmation that the loss was covered.
 
-## 4. Target B — Ethereum, structural (no exact match available)
+## 4. Target B — Ethereum, structural
 
 The Resolv/USR exploit of March 2026 is the dominant Ethereum credit-loss
 event. **No exact market-level bad-debt figure is pre-registerable**, and this
@@ -68,43 +68,104 @@ is stated now rather than discovered later.
 Published figures are scenario-dependent, not settled: approximately $5M of
 structural wstUSR bad debt *if* RLP absorbs the loss, versus $10-20M of total
 lending-market bad debt if it does not, against roughly $180M of liquidations
-across 15 vaults. Writing a single number here would be inventing precision no
-source supports.
+across 15 vaults. Writing a single number here would invent precision no source
+supports.
 
-Pre-registered instead, as falsifiable structural claims:
+Pre-registered instead as falsifiable structural claims:
 
 - **B1.** The largest single concentration of `badDebtAssets` across Ethereum
   USDC-loan markets in the pinned range occurs in markets collateralized by
   USR or wstUSR. *Fail if the dominant concentration is elsewhere.*
 - **B2.** That concentration is dated within March 2026. *Fail if the dominant
   Ethereum bad-debt cluster falls in a different month.*
-- **B3.** Total Ethereum USDC-loan `badDebtAssets` in range lies between
-  **$1M and $50M**. This is a deliberately loose order-of-magnitude bound; it
-  cannot confirm the figure, only catch a decimal or unit catastrophe. *Fail
-  outside.*
 
-B3 is weak on purpose. A bound presented as a precise test would be worse than
-an honest loose one.
+## 5. Target C — independent-implementation cross-check
 
-## 5. What counts as a FAIL
+Replaces an earlier order-of-magnitude bound of $1M-$50M. That bound was
+nearly vacuous: it would not have discriminated between any two numbers a
+correct extraction might plausibly return, and a test that cannot fail against
+realistic wrong answers is not a test.
 
-Fixed now, before any number is seen:
+**Prior art:** `badin-feio/morpho-usdc-yield-research`, which computes Morpho
+USDC credit loss from Morpho's own data — Dune SQL over liquidation and bad
+debt events, with `sql/usdc_liquidations_by_chain.sql` producing the bad-debt
+numerator. It covers **Ethereum and Base, April 2024 to September 2026** — the
+same two chains this extraction now targets.
+
+**Pre-registered conditions**, per chain:
+
+- **C1.** The **count** of `Liquidate` events with non-zero `badDebtAssets`
+  matches exactly. Both derive from the same on-chain events; the event set
+  should be identical, and a count mismatch localises the problem immediately.
+- **C2.** The **summed** `badDebtAssets` agrees within **0.5%**. Exact
+  agreement is the expectation; the band exists only for block-boundary and
+  indexer differences. A gap above 0.5% means a methodology difference that
+  must be located, not averaged away.
+
+**Compare the numerator, not the headline.** The prior art's published figures
+are rates — 7.1 bps/yr Ethereum, 0.7 bps/yr Base — which depend on a borrowing
+denominator computed by `scripts/denominator.py`. That denominator methodology
+is not being replicated here, so comparing bps would conflate this extraction
+with someone else's denominator. The comparison is on the bad-debt numerator in
+raw USDC units only.
+
+**Align the range.** The pinned block range (`EXTRACTION-SPEC.md` §1) should be
+chosen to match the prior art's April 2024 - September 2026 window, or the
+comparison performed over the intersection with the actual window stated. A
+range mismatch would surface as a C1 count difference and be misread as an
+extraction fault.
+
+**The LLTV mismatch is deliberate and one-directional.** The prior art
+aggregates across all USDC markets **by loan-token address**, discarding the
+LLTV decomposition that `EXTRACTION-SPEC.md` §2 requires this dataset to
+retain. The cross-check is therefore valid **only at the aggregate level**:
+this dataset is summed up to the prior art's granularity for comparison, never
+the reverse. The per-LLTV decomposition is this project's own and is **not
+verified by this target** — no external check on it exists, and the write-up
+must not imply otherwise.
+
+**This is a cross-check, not ground truth.** Two independent implementations
+agreeing is materially stronger evidence than matching a blog post's scenario
+range, and it is still two implementations that could share a common error —
+both read the same chain through tooling with overlapping assumptions.
+Agreement raises confidence; it does not establish correctness. Citing the
+prior art becomes structural rather than courtesy.
+
+## 6. What counts as a FAIL
+
+Fixed now, before any number is seen.
 
 1. **A missing event is a FAIL.** If Target A's market yields no rows, that is
    a failure of extraction, never evidence the event did not happen.
-2. **A rounding difference inside the stated tolerance is not a fail.** Only
-   the +/- 0.005 USDC band of §2 qualifies. No other tolerance exists.
-3. **Anything else is a FAIL until explained.** An explanation must be written
+2. **An extracted `0` for Target A's market is a FAIL**, not confirmation that
+   the loss was covered. See §3.
+3. **A rounding difference inside a stated tolerance is not a fail.** Only two
+   tolerances exist: Target A's +/- 0.005 USDC presentation band (§2), and
+   Target C2's 0.5% cross-implementation band (§5). No others may be invented.
+4. **A C1 event-count mismatch is a FAIL** even if C2's summed amount agrees.
+   Matching totals over a differing event set means offsetting errors.
+5. **Anything else is a FAIL until explained.** An explanation must be written
    down, committed, and must not be of the form "the number is close enough."
-4. **A total that matches while an itemized target fails is a FAIL.** Public
+6. **A total that matches while an itemized target fails is a FAIL.** Public
    analysis holds that nearly all credit loss on each chain traces to a single
    event. A matching total over a failing itemization means two errors
-   cancelling, which is worse than an obvious miss because it looks like
-   success.
-5. **Any post-hoc amendment to this file is itself a finding** and must be
+   cancelling — worse than an obvious miss, because it looks like success.
+7. **Any post-hoc amendment to this file is itself a finding** and must be
    committed separately, with the pre-amendment version reachable in history.
 
-## 6. Recording the result
+### Failure modes this gate deliberately cannot catch
+
+Stated so the write-up does not overclaim:
+
+- **A shared error with the prior art.** Target C compares two implementations
+  reading the same chain through partly overlapping tooling. A mistake common
+  to both passes silently.
+- **The per-LLTV decomposition.** No external check exists on it (§5). Targets
+  A and C both operate at or above aggregate granularity.
+- **Anything outside the pinned range.** The range is a choice, and a
+  bad-debt event outside it is invisible rather than absent.
+
+## 7. Recording the result
 
 When extraction completes, append a results section to this file containing:
 the measured value for each target, PASS or FAIL against the conditions above
