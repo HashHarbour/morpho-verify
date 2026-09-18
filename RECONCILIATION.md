@@ -369,3 +369,101 @@ the *range definition*, not of the data. Target C's independence rests on Dune
 versus GraphQL reading the same chain, and survives intact. A re-runner with
 archive access can verify the range independently; a free RPC key with archive
 support would close it properly.
+
+---
+
+# DAY 4 GATE — bulk extraction results, 2026-09-18
+
+```
+dataset      dataset-baddebt-usdc.tsv
+rows         611          duplicate (chain,block,logIndex,txHash) keys: 0
+bytes        203,034
+SHA-256      54e7610b891365ea28d000f7c9521ad7251c2e51b9c194115c548f7230da5028
+```
+
+Pagination: 14 pages, final page 55 of 100. **Trap #12 assertion passed** —
+the final page is short, so the set is exhausted. 1,355 bad-debt liquidations
+across all loan assets; 611 after filtering to USDC-loan markets.
+
+## Measured
+
+```
+ETHEREUM   206 events, 52 markets   total $1,184,227.06
+  largest event   $1,181,253.93  (99.7%)  2026-06-06  RLP collateral, 86% LLTV
+  largest market  RLP 86% LLTV    99.7%
+  top month       2026-06 -- 100%
+
+BASE       405 events, 39 markets   total   $111,885.37
+  largest event      $72,242.45  (64.6%)  2025-05-25  sAMM-USDC/cUSDO
+  largest market  sAMM-USDC/cUSDO 86% LLTV  88.2%
+  top month       2025-05 -- 75%
+```
+
+## Target B1 — **FAIL**
+
+Registered: the dominant Ethereum concentration occurs in markets
+collateralized by **USR or wstUSR**.
+
+Measured: the dominant market is collateralized by **RLP** (Resolv Liquidity
+Pool), 99.7% of Ethereum USDC bad debt. RLP is a Resolv-family asset, but it is
+not USR and not wstUSR. wstUSR markets appear in the data at trivial size.
+
+**The target named the wrong Resolv token.** The structural intuition — Resolv
+is the dominant Ethereum event — holds. The pre-registered claim as written does
+not. Recorded as FAIL, not softened.
+
+## Target B2 — **FAIL**, and this is the substantive finding
+
+Registered: that concentration is dated within **March 2026**.
+
+Measured: **2026-06-06 15:05 UTC**, block 25259134,
+tx `0x267a017b5f011558223af8aee98cdaf4b6e2418ab204b0a12b8fc892eeec150f`.
+June 2026. 100% of Ethereum USDC bad debt falls in 2026-06; March 2026 carries
+none.
+
+The Resolv exploit is publicly dated **March 2026**. The on-chain realization of
+the resulting bad debt is **June 2026** — roughly three months later.
+
+**Hypothesis, not established:** bad debt is realized when a position is
+liquidated, not when the collateral becomes impaired. A position can remain
+unliquidated long after the event that doomed it. If so, exploit date and
+realization date are different quantities and are being conflated by narrative
+sources.
+
+**This is the same species as the gross/net finding, in time rather than
+amount.** Published incident dates describe when the exploit occurred; chain
+data records when loss was realized. Any analysis keyed on incident dates will
+place losses in the wrong period.
+
+Not asserted as explanation. Recorded as FAIL with the discrepancy stated.
+
+## Target C — NOT EVALUABLE tonight
+
+C1/C2 require the prior art's bad-debt **numerator**. Only its published rates
+are available (7.1 bps/yr Ethereum, 0.7 bps/yr Base); the numerator needs its
+Dune queries run, which needs Dune access. **Recorded as unevaluated, not as
+passed.**
+
+## Concentration — the day-8 axis
+
+```
+                 single event      single market
+ETHEREUM            99.7%             99.7%
+BASE                64.6%             88.2%
+```
+
+"Almost all credit loss traces to a single event" is **true for Ethereum** and
+**qualified for Base**: the largest single event is 64.6%, the largest market
+88.2%, and the Aerodrome attack is 73% of its own market's lifetime bad debt.
+
+Concentration is therefore **granularity-dependent**, and weakens as you move
+from chain to market to event. Since the day-8 surface is built on tail
+treatment, this axis must be parameterized by granularity rather than assuming
+single-event dominance.
+
+## Gate outcome
+
+**FAIL.** B1 and B2 both fail as pre-registered; C is unevaluated. No target
+has been adjusted. The extraction itself is not implicated in any failure: each
+is a target written from narrative sources against a differently-defined
+on-chain quantity.
