@@ -1,0 +1,17 @@
+====================================================================
+Cartesi determinism probe -- run record
+label        : smoke test: windows native, pre-WSL
+target       : native
+command      : '[redacted-local-path]\python.exe' probe.py --sum-n 100000
+runs         : 3
+probe sha256 : 868bb295926daf4da115cb74789cb0561c726a6fd0132dc939b02c7c46704600
+hygiene      : LANG=C LC_ALL=C MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 TZ=UTC VECLIB_MAXIMUM_THREADS=1
+--------------------------------------------------------------------
+run 1   digest 97b417fae37057b7982a380767b97b2526c7093db427c4e0b6698efa8ce16cb0  bytes 30619    wall    2.626s  exit 0
+run 2   digest 97b417fae37057b7982a380767b97b2526c7093db427c4e0b6698efa8ce16cb0  bytes 30619    wall    2.095s  exit 0
+run 3   digest 97b417fae37057b7982a380767b97b2526c7093db427c4e0b6698efa8ce16cb0  bytes 30619    wall    3.528s  exit 0
+--------------------------------------------------------------------
+RESULT: MATCH  (3/3 successful, 1 distinct digest(s))
+median wall  : 2.626s
+====================================================================
+

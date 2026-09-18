@@ -1,0 +1,23 @@
+====================================================================
+Cartesi determinism probe -- run record
+label        : NEGATIVE TEST: hash seed deliberately randomised
+target       : cmd
+command      : py _break_hashseed.py
+runs         : 2
+probe sha256 : n/a (external command)
+hygiene      : LANG=C LC_ALL=C MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 TZ=UTC VECLIB_MAXIMUM_THREADS=1
+--------------------------------------------------------------------
+run 1   digest 9606b3de1d993a597389b9fb6a4b1db1e1bc468b1dc4310e22d613d98f050537  bytes 30615    wall    2.587s  exit 0
+run 2   digest a96964f68aab7f50612197d7184b4edb90ef7964f1e150a7452cb022d827f4f2  bytes 30615    wall    2.763s  exit 0
+--------------------------------------------------------------------
+RESULT: MISMATCH  (2/2 successful, 2 distinct digest(s))
+median wall  : 2.763s
+
+run 1 vs run 2
+  sections affected: D3 (1)
+  1 differing line(s)
+  line 576:
+    run1: D3.hash_order_canary	S	mkt_0030,mkt_0025,mkt_0036,mkt_0040,mkt_0029,mkt_0023,mkt_0000,mkt_0034,mkt_0026,mkt_0017,mkt_0011,mkt_0041,mkt_0028,mkt_0050,mkt_0049,mkt_0001,mkt_0009,mkt_0032,mkt_0045,mkt_0019,mkt_0013,mkt_0021,mkt_0062,mkt_0048,mkt_0037,mkt_0015,mkt_0024,mkt_0054,mkt_0035,mkt_0051,mkt_0003,mkt_0006,mkt_0004,mkt_0016,mkt_0022,mkt_0033,mkt_0031,mkt_0043,mkt_0014,mkt_0005,mkt_0008,mkt_0056,mkt_0007,mkt_0039,mkt_0042,mkt_0055,mkt_0012,mkt_0057,mkt_0002,mkt_0060,mkt_0038,mkt_0052,mkt_0059,mkt_0061,mkt_0044,mkt_0046,mkt_0047,mkt_0018,mkt_0058,mkt_0053,mkt_0027,mkt_0063,mkt_0020,mkt_0010
+    runN: D3.hash_order_canary	S	mkt_0029,mkt_0055,mkt_0048,mkt_0002,mkt_0032,mkt_0012,mkt_0019,mkt_0028,mkt_0035,mkt_0061,mkt_0004,mkt_0000,mkt_0017,mkt_0013,mkt_0030,mkt_0052,mkt_0033,mkt_0001,mkt_0006,mkt_0063,mkt_0023,mkt_0053,mkt_0034,mkt_0060,mkt_0058,mkt_0051,mkt_0021,mkt_0014,mkt_0044,mkt_0024,mkt_0010,mkt_0031,mkt_0036,mkt_0003,mkt_0040,mkt_0057,mkt_0011,mkt_0056,mkt_0008,mkt_0043,mkt_0042,mkt_0025,mkt_0045,mkt_0007,mkt_0041,mkt_0016,mkt_0038,mkt_0037,mkt_0027,mkt_0022,mkt_0039,mkt_0047,mkt_0050,mkt_0009,mkt_0046,mkt_0020,mkt_0005,mkt_0049,mkt_0059,mkt_0026,mkt_0062,mkt_0054,mkt_0015,mkt_0018
+====================================================================
+
