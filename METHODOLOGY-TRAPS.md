@@ -205,6 +205,87 @@ machine.
 
 ---
 
+## 8. The native baseline and the machine run different Python versions
+
+**Day 1.** The plan said to baseline against "python3 on your laptop." Once the
+machine image was inspected, that turned out to mean **3.12.3** (Ubuntu's)
+against **3.13.2** (the machine's, from
+`cartesi/python:3.13.2-slim-noble`). Two interpreter versions, compared as
+though the only difference were emulation.
+
+**What it would have done:** folded interpreter-version differences into a
+number published as architecture/emulation overhead. Same species as traps #1
+and #2.
+
+**The clean fix was unavailable.** Running the baseline in the same image on
+`linux/amd64` would have made architecture the sole variable, but
+`docker buildx imagetools inspect` shows the tag carries exactly one real
+platform:
+
+```
+linux/riscv64     sha256:9778378f56b33d29e1a4fb9ffac1b9da0a9d2829f47d22d6f0c73c17ab00e04f
+unknown/unknown   (attestation-manifest, not a platform)
+```
+
+There is no amd64 variant. So **architecture is not isolated as the sole
+variable**, and that limitation is stated rather than papered over. "We could
+not fully isolate architecture" is more credible than pretending otherwise.
+
+**Measured instead of declared.** Three interpreters, same probe, hygiene vars
+set, three runs each — all bit-identical:
+
+```
+uv  3.12.3   4d0229b16d20b98cca2f17de661f7353625efc23be8379ec99f952363e197419
+uv  3.13.2   4d0229b16d20b98cca2f17de661f7353625efc23be8379ec99f952363e197419
+sys 3.12.3   4d0229b16d20b98cca2f17de661f7353625efc23be8379ec99f952363e197419
+```
+
+Both uv builds come from the same toolchain (`python-build-standalone`), so the
+uv-vs-uv comparison isolates version and the uv-vs-system comparison isolates
+build toolchain.
+
+**Result: the numerical confound is bounded at zero, measured.** Interpreter
+version contributes nothing to the payload; neither does build toolchain. The
+remaining native-vs-emulated difference is attributable to architecture and
+libm. That converts a caveat into a measurement.
+
+**Residual, unquantifiable:** the machine's Python is a *third* build, compiled
+into Cartesi's image with its own flags, which cannot be replicated natively.
+The ratio carries an unquantified build-flag component. Say so.
+
+---
+
+## 9. Interpreter build flags change timing without changing the digest
+
+**Day 1.** The trap #8 experiment was designed to bound a numerical confound. It
+bounded that at zero and surfaced a larger one in the timings:
+
+```
+uv  3.12.3   best 0.576 s
+uv  3.13.2   best 0.568 s
+sys 3.12.3   best 0.845 s     <- 1.47x slower, identical digest
+```
+
+Identical work, identical output bytes, 47% slower. Ubuntu's stock distro build
+against uv's PGO/LTO-optimised `python-build-standalone`.
+
+**What it would have done, and the direction matters:** Ubuntu's `python3` as
+the baseline inflates the denominator, which **deflates** the emulation
+overhead ratio by roughly 32%. Against a 30 s emulated run: **35.5x** using
+system Python versus **52.1x** using uv's.
+
+**The lazy choice produces the flattering number.** That is the dangerous
+direction — confounds that flatter you are the ones a hostile reader finds
+first and the ones that cost most when found. A digest-based determinism check
+cannot catch this at all, because the digest is identical either way. Only the
+timing moves.
+
+**Resolution:** baseline on **uv 3.13.2** — matches the machine's interpreter
+version, documented reproducible build. Record which interpreter build produced
+every published timing. State the residual build-flag component (trap #8).
+
+---
+
 ## Appendix: tooling traps (not measurement confounds)
 
 **A1. Cartesi CLI version.** The live docs give `npm i -g @cartesi/cli` with no

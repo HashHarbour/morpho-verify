@@ -94,7 +94,7 @@ Beyond env vars, the probe itself observes the rules:
   not by tag — tags are mutable and a silently moved tag is an unreproducible
   build.
 
-## Benchmark methodology — two traps
+## Benchmark methodology — four traps
 
 **1. Compare WSL-native against emulated, not Windows-native against emulated.**
 The machine runs inside WSL2. Timing against Windows Python would fold a
@@ -135,6 +135,43 @@ Fixed sections (A, B, D, E) account for roughly 0.05 s; the rest is section C.
 For the day-2 measurement use a `--sum-n` large enough that computation
 dominates measurement noise — 100,000 is a reasonable default and is what has
 been validated.
+
+**3. Baseline on uv's CPython 3.13.2, not Ubuntu's system `python3`.**
+The machine ships Python 3.13.2. Ubuntu ships 3.12.3. Measured across three
+interpreters, the probe payload is bit-identical — interpreter version and
+build toolchain contribute exactly nothing to the digest:
+
+```
+uv 3.12.3 / uv 3.13.2 / Ubuntu 3.12.3
+  -> 4d0229b16d20b98cca2f17de661f7353625efc23be8379ec99f952363e197419
+```
+
+**4. But build flags move the timing without moving the digest.**
+
+| interpreter | best internal elapsed |
+|---|---|
+| uv 3.13.2 | 0.568 s |
+| uv 3.12.3 | 0.576 s |
+| Ubuntu system 3.12.3 | **0.845 s** — 1.47x slower |
+
+Identical work, identical output bytes, 47% slower. Baselining on Ubuntu's
+build inflates the denominator and **deflates** the overhead ratio by ~32%
+(35.5x vs 52.1x against a 30 s emulated run) — the flattering direction, which
+is the dangerous one. A digest check cannot catch this; only the timing moves.
+
+Record which interpreter build produced every published timing. Full provenance
+is in [ENVIRONMENT.md](ENVIRONMENT.md).
+
+## Harness design — one invocation, one payload
+
+The machine costs **4.1 billion cycles to boot**, paid on every invocation
+regardless of what is computed. A parameter sweep run as N separate machine
+invocations pays that N times and boot dominates the budget.
+
+The sweep therefore computes the **whole surface inside a single machine
+invocation**, emitting **one payload**. Cheaper, and cleaner for the claim: one
+digest covering one complete experiment, rather than N digests a re-runner has
+to reassemble.
 
 ## Validation status
 
