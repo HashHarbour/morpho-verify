@@ -67,6 +67,44 @@ Fields captured per event: `marketId`, `caller`, `borrower`, `repaidAssets`,
 Both the assets and shares forms are captured so the conversion is never
 inferred. The assets figure is authoritative for reconciliation.
 
+### Market attribution is read, not computed
+
+```solidity
+event Liquidate(
+    Id indexed id, address indexed caller, address indexed borrower,
+    uint256 repaidAssets, uint256 repaidShares, uint256 seizedAssets,
+    uint256 badDebtAssets, uint256 badDebtShares
+);
+event CreateMarket(Id indexed id, MarketParams marketParams);
+```
+
+The market `id` is the first parameter of the event. Per-market attribution is
+therefore **read off the event, not inferred** — misattributing a liquidation to
+the wrong market is structurally impossible, not merely unlikely.
+
+The decomposition risk collapses to a single question: **is the `id` -> LLTV
+mapping correct?** That has two independent external checks:
+
+1. **`idToMarketParams(Id)`** — an external view on Morpho Blue returning
+   `(loanToken, collateralToken, oracle, irm, lltv)`. Resolve every market id
+   against chain state **over an RPC endpoint**, independent of whatever API
+   the events were extracted through.
+2. **`CreateMarket`** emits the full `MarketParams` at creation, giving a
+   second derivation from event data.
+
+Plus one known-answer case: the Aerodrome market's LLTV is stated in its
+post-mortem and must match what the getter returns.
+
+**REQUIRED.** Every market id in the dataset is resolved via
+`idToMarketParams` over RPC, and the returned params stored alongside. Any id
+whose RPC-resolved `lltv` disagrees with the extraction source is a **FAIL**.
+
+> Corrects an earlier claim in `RECONCILIATION.md` that the per-LLTV
+> decomposition was "verified by nothing." That was an overstatement made
+> before the event shape was checked. It is verifiable, cheaply, against chain
+> state — and since LLTV is the barrier in the model, this is the layer that
+> most needed a check.
+
 ### Semantics check — required before bulk extraction
 
 Two properties are **assumptions, not settled facts**, and must be verified

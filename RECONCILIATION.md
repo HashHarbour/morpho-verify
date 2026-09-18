@@ -124,12 +124,26 @@ the reverse. The per-LLTV decomposition is this project's own and is **not
 verified by this target** — no external check on it exists, and the write-up
 must not imply otherwise.
 
-**This is a cross-check, not ground truth.** Two independent implementations
-agreeing is materially stronger evidence than matching a blog post's scenario
-range, and it is still two implementations that could share a common error —
-both read the same chain through tooling with overlapping assumptions.
-Agreement raises confidence; it does not establish correctness. Citing the
-prior art becomes structural rather than courtesy.
+**Data paths are genuinely independent — stronger than first stated.** The
+prior art queries Dune decoded event tables
+(`morpho_blue_multichain.morphoblue_evt_liquidate`,
+`...evt_createmarket`). If this extraction runs through Morpho's GraphQL API,
+the two paths use **different indexers and different decoding**, with different
+failure modes. An earlier draft of this file warned of "overlapping tooling";
+that caveat was written before the source was checked and was too pessimistic.
+
+It still is not ground truth — both read the same chain, and a defect in the
+chain data or in a shared understanding of the event semantics would pass
+through both. Agreement raises confidence substantially; it does not establish
+correctness. Citing the prior art is structural, not courtesy.
+
+> **Note:** this independence depends on the extraction path chosen. Pulling
+> directly from chain logs via RPC would sit much closer to Dune's own path and
+> weaken Target C accordingly. Record which path was used.
+
+**Incidental confirmation from their SQL:** it computes `badDebtAssets / 1e6`
+as USD, confirming the field is denominated in raw 6 dp USDC asset units — and
+it groups by chain only, confirming the LLTV aggregation noted above.
 
 ## 6. What counts as a FAIL
 
@@ -160,8 +174,13 @@ Stated so the write-up does not overclaim:
 - **A shared error with the prior art.** Target C compares two implementations
   reading the same chain through partly overlapping tooling. A mistake common
   to both passes silently.
-- **The per-LLTV decomposition.** No external check exists on it (§5). Targets
-  A and C both operate at or above aggregate granularity.
+- ~~**The per-LLTV decomposition.**~~ **Withdrawn.** This claimed no external
+  check existed. It was wrong, and was written before the event shape was
+  checked. The `Liquidate` event carries the market `id` directly, so
+  attribution is read rather than computed, and the `id` -> LLTV mapping is
+  verifiable against chain state via `idToMarketParams` over RPC. See
+  `EXTRACTION-SPEC.md` §3. Targets A and C still operate at or above aggregate
+  granularity, but the decomposition is not unverified.
 - **Anything outside the pinned range.** The range is a choice, and a
   bad-debt event outside it is invisible rather than absent.
 
