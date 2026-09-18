@@ -192,3 +192,88 @@ verbatim, the dataset SHA-256, the pinned block range, and the query timestamp.
 
 Any discrepancy is recorded with its explanation, or recorded as unexplained.
 "Unexplained" is an acceptable entry. Quietly adjusting a target is not.
+
+---
+
+# RESULTS — first contact with data, 2026-09-18
+
+## Semantics check — RESOLVED: `badDebtAssets` is PER-EVENT
+
+The Aerodrome market has **13 liquidations with non-zero `badDebtAssets`**
+(90 liquidations total). The sum of the per-event values equals the market's
+`realizedBadDebt` exactly:
+
+```
+sum of 13 per-event badDebtAssets : 98,738,726,499 raw
+market realizedBadDebt (API)      : 98,738,726,499 raw
+```
+
+A cumulative field would have overcounted massively. **Per-event, confirmed.**
+
+Note the spec's assumption that this market "very likely carries a single
+bad-debt event" was wrong — it carries 13, and is itself the discriminating
+market. No separate Ethereum market was needed. The requirement for a
+second market was still correct: it was satisfied here by accident, not by
+design.
+
+## Target A — **FAIL**
+
+```
+pre-registered   49,303.14 USDC      band [49303135000, 49303145000] raw
+attack event     72,242,449,112 raw = 72,242.449112 USDC   blk 30713201
+                 2025-05-25 23:29 UTC  <- matches the post-mortem timestamp exactly
+market lifetime  98,738,726,499 raw = 98,738.726499 USDC   (13 events)
+```
+
+**The pre-registered figure matches neither quantity.** Not the attack event's
+on-chain `badDebtAssets`, and not the market's lifetime total.
+
+The market, block and timestamp all confirm this is the right event: the first
+bad-debt liquidation lands at 2025-05-25 23:29 UTC, the exact minute the
+post-mortem gives.
+
+**Diagnosis: the target was mis-specified, not the extraction.** `49,303.14`
+was taken from a narrative post-mortem and pre-registered as though it were an
+on-chain `badDebtAssets` sum. It is a different quantity — plausibly a net
+figure after liquidation recovery, or the portion borne by one vault. **What it
+actually measures is not yet established and is NOT being guessed at here.**
+
+Per §6.5 this is recorded as a FAIL until explained. The target is not being
+adjusted to fit.
+
+**This is the pre-registration working.** Had the target been written after
+seeing `98,738.73`, the temptation to call the post-mortem figure "roughly
+half, close enough" would have been considerable. Written first, it produced an
+unambiguous FAIL and a specific question: what quantity is 49,303.14?
+
+## Subsequent bad-debt events in the same market
+
+```
+2025-05-25 23:29   72,242.45 USDC   (the attack)
+2025-05-26 12:20   11,544.71
+2025-07-02 06:32   14,946.01
+2025-12 .. 2026-05  13 events totalling ~5.55 USDC (dust)
+```
+
+The attack is 73% of the market's lifetime bad debt, not 100%. Any claim that
+"almost all credit loss traces to a single event" needs stating at the right
+granularity.
+
+## Enumeration defect found
+
+A `markets(first:1000, ...)` query returned exactly 1000 items (179 Ethereum +
+821 Base) — **the cap, not the market set**. The Aerodrome market was absent
+from those results despite being a Base USDC-loan market.
+
+Any figure derived from that query is void. **Bulk extraction must paginate via
+`skip`/`cursor` and assert that the final page is short.** A query that returns
+exactly the page size must never be treated as complete.
+
+## Still open
+
+- What quantity is 49,303.14? Target A cannot pass or be retired until known.
+- Block pinning: public RPC archive access is gated
+  (`eth_getCode` at historical blocks requires a paid token), so deployment
+  blocks were not resolved by binary search. `creationBlockNumber` from the API
+  is available per market but is indexer-sourced, not independently verified.
+- Targets B and C not yet evaluated.
