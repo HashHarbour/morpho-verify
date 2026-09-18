@@ -237,3 +237,60 @@ way the model's is. What a re-runner can do is re-extract the same pinned block
 range and compare the SHA-256. That is a meaningful check and it is weaker than
 the determinism guarantee on the model, and the write-up must say so plainly
 rather than let a reader assume the verification covers more than it does.
+
+---
+
+# Appendix: pre-extraction verification (resolved 2026-09-18)
+
+Checks run against chain state and the API before any data was extracted.
+
+## Market attribution — RESOLVED
+
+`Liquidate` carries `Id indexed id` as its first parameter (confirmed from
+`morpho-blue/src/libraries/EventsLib.sol`). Attribution is read, not computed.
+
+## id -> LLTV mapping — RESOLVED, working check demonstrated
+
+`idToMarketParams(bytes32)`, selector `0x2c3c9157`, called over RPC against
+Morpho Blue on Base (`0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb`) for the
+Aerodrome market:
+
+```
+market          0x5b347b3dcfed096f09040cd30a174ae354ecc0a35c996493b8fa490d6d3e79d7
+loanToken       0x833589fcd6edb6e08f4c7c32d4f71b54bda02913   = Base USDC
+collateralToken 0x5fede9d65714907381a76aa9bf949219dd1c5023
+oracle          0x4e0175f63bccdf4a2eeb22d4c98ebad4438ff6f9
+irm             0x46415998764c29ab2a25cbea6254146d50d22687
+lltv            860000000000000000  = 86.00%
+```
+
+Confirms the market is USDC-loan and therefore in scope, and that the
+decomposition layer has a working external check independent of any indexer.
+
+## Extraction path — RESOLVED
+
+Morpho GraphQL (`https://api.morpho.org/graphql`) exposes
+`marketTransactions` with `MarketTransactionLiquidationData`:
+`liquidator, repaidAssets, repaidShares, seizedAssets, badDebtAssets,
+badDebtShares`.
+
+Note: `borrower` is not on that type; it must be sourced from the parent
+transaction (`user`) and verified against the on-chain event before bulk use.
+
+Prior art queries Dune decoded tables, so GraphQL extraction keeps the two
+paths on separate indexers — Target C independence holds.
+
+## Working endpoints
+
+```
+Ethereum  https://ethereum-rpc.publicnode.com   head 26,007,193
+Base      https://base-rpc.publicnode.com       head 51,489,467
+          (mainnet.base.org 403s non-curl user agents)
+```
+
+## STILL OPEN — required before bulk extraction
+
+1. Pin start/end blocks per chain, commit as amendment.
+2. Count non-zero `badDebtAssets` events per Ethereum market to identify a
+   market with >=2, for the semantics discriminator.
+3. Run the two-market semantics check; record per-event vs cumulative.
