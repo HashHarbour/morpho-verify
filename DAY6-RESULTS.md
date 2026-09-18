@@ -113,3 +113,93 @@ cannot check without re-executing the model, which is the point of the artifact.
 - sigma is still the single day-5 reference value, not parameterized by
   collateral class.
 - The $2.13 check is not yet run.
+
+
+---
+
+## 6. The $2.13 check -- the counter-argument foundation HOLDS
+
+First: the vaults query also truncated at exactly its page cap (200 of 200),
+returning 1 Steakhouse vault. Paginated properly: **980 vaults, 55 Steakhouse,
+16 USDC-denominated.** Trap 13 again, in a third place.
+
+`Steakhouse Prime USDC` on Base, $20.3m, allocates to six markets:
+
+```
+  cbBTC     lltv 86%   $18,660,571     <- 92% of the vault
+  cbETH     lltv 77%        735,315
+  WETH      lltv 86%        425,726
+  cbETH     lltv 86%        262,900
+  wstETH    lltv 86%        224,470
+  idle                            0
+```
+
+Cross-referencing those markets against the committed bad-debt dataset:
+
+```
+  bad debt in currently-allocated Prime markets    $0.08
+  wider: all Steakhouse USDC vaults, 41 markets    $0.15
+  adcv published claim                             $2.13
+```
+
+**The substantive claim is confirmed.** Bad debt in the Steakhouse Prime book is
+essentially zero -- eight cents against a $20.3m vault, fifteen cents across all
+41 markets Steakhouse USDC vaults currently allocate to.
+
+### Why the cent-level figure does not reproduce, and which direction it cuts
+
+The measurement is **$0.08 against a published $2.13** and the gap is explained
+by scope, not by error:
+
+- This check uses **current** allocations. The claim covers **since January
+  2024**. Markets a vault held historically and has since exited are invisible
+  here and would count there.
+- This check sums **market-level** bad debt. The claim is **vault-attributed** -
+  a vault holding 30% of a market bears 30% of its loss.
+
+Note those two cut in opposite directions. Market-level totals **overstate** any
+single vault share, so on that axis alone the measurement should exceed the
+claim. It is lower instead, which points to historical allocations rather than
+attribution as the explanation.
+
+**Resolving it would require MetaMorpho allocation history over time** -- the
+second dataset explicitly scoped out in `MODEL-SPEC.md` section 4. The check is
+therefore recorded as **confirming the order of magnitude and the substantive
+claim, not reproducing the exact figure**.
+
+### This is the first published figure in this project that checks out
+
+Days 3-6 found published figures diverging from chain state on amount
+(gross vs net, 41%), identity (RLP not USR), time (June not March), and
+exposure (78% unpriced). **This one holds.** That matters: it is evidence the
+method is not producing divergence by construction.
+
+## 7. FOURTH AXIS: are the published figures computed on unfiltered exposure?
+
+78% of reported borrow exposure carries prices that cannot be right, in the API
+that essentially every analysis of this protocol runs through -- including both
+sides of this dispute.
+
+Any exposure-weighted figure drawn from this source **without a validity filter
+is wrong by roughly 5x**. That potentially touches observed depositor rate
+aggregates, repaid-debt totals, and any retail-capital-at-risk framing.
+
+**What can be stated, and what cannot.** It cannot be established here whether
+either side applied such a filter. What can be stated is that **the filter is
+necessary, no published methodology documents applying one, and the correction
+is a factor of about five.** That is a claim about what a reader cannot verify,
+not an accusation that anyone got it wrong.
+
+## 8. The low-PD tail: markets exist, nobody borrows
+
+35.2% of markets by count sit at low PD carrying 0.04% of exposure. The
+explanation is visible in the population: of 3,904 USDC-loan markets, only
+**423 hold any collateral** and only **389 have both collateral and borrowing**.
+
+The low-PD tail is overwhelmingly **markets created and never used**, plus
+markets with conservative LLTVs that attracted no borrowing demand. Permissionless
+market creation makes an empty market free to create.
+
+This supports exposure-weighting as the right basis for the regime gate: a
+market with no borrower carries no lender risk. It also means the count-weighted
+figure should not be read as describing the active book.
