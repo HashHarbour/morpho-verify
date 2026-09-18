@@ -136,6 +136,13 @@ For the day-2 measurement use a `--sum-n` large enough that computation
 dominates measurement noise — 100,000 is a reasonable default and is what has
 been validated.
 
+> **Correction — item 2 applies to native runs only.** Inside the Cartesi
+> Machine the guest clock is derived from cycle count, so `elapsed_seconds` is
+> *emulated* time, identical across runs regardless of how long the host
+> actually took. Using it there understates emulation overhead roughly
+> eightfold. **Native side: probe self-reported elapsed. Machine side: host wall
+> time.** Never mix them. See trap #10.
+
 **3. Baseline on uv's CPython 3.13.2, not Ubuntu's system `python3`.**
 The machine ships Python 3.13.2. Ubuntu ships 3.12.3. Measured across three
 interpreters, the probe payload is bit-identical — interpreter version and
@@ -172,6 +179,32 @@ The sweep therefore computes the **whole surface inside a single machine
 invocation**, emitting **one payload**. Cheaper, and cleaner for the claim: one
 digest covering one complete experiment, rather than N digests a re-runner has
 to reassemble.
+
+## Running it inside the machine
+
+`machine-run.sh` drives `cartesi-machine` directly rather than going through
+`cartesi shell`, which hard-codes `--tty`/`-it`. That matters: a TTY injects
+carriage returns into the payload and corrupts the digest. No TTY, clean bytes.
+
+```bash
+RUNS=2 OUT=/tmp/machine-run ./machine-run.sh
+```
+
+Inside the machine stdout and stderr merge onto one console, so the payload is
+extracted by its own `# probe-version` / `# records` delimiters. That is safe
+because `probe.py` flushes stdout before writing any metadata.
+
+## numpy: not attempted, by design
+
+PyPI publishes **zero riscv64 files for numpy** out of 4,232. pip would compile
+from source under emulation at ~125x, plausibly for hours.
+
+It was never needed. `math.erf` is confirmed working in-machine on Python
+3.13.2, subnormals are not flushed, and the model is 78,000 closed-form
+evaluations — roughly 150 s emulated — with nothing to vectorise. See
+[FALLBACK.md](FALLBACK.md) Level 0.
+
+This is a decision, not a gap.
 
 ## Validation status
 

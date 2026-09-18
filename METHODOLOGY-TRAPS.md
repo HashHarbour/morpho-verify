@@ -286,6 +286,70 @@ every published timing. State the residual build-flag component (trap #8).
 
 ---
 
+## 10. A deterministic machine has a deterministic clock
+
+**Day 2.** `probe.py` reports `elapsed_seconds` from `time.perf_counter()`.
+Inside the Cartesi Machine that value is **emulated time, not host time** — the
+guest clock is derived from cycle count, so it is a deterministic function of
+the work done.
+
+```
+              emulated clock      host wall
+run 1         8.859712 s          88.91 s
+run 2         8.859712 s          81.98 s
+```
+
+Identical to six decimal places across two runs whose real durations differ by
+seven seconds.
+
+**What it would have done:** using the emulated clock as the numerator gives an
+overhead ratio of **15.6x** instead of the real **~130x** — understating
+emulation cost roughly eightfold. That is the third confound in a row pointing
+the flattering direction (see #1, #9).
+
+**Why nobody would catch it from the output:** `elapsed_seconds` looks exactly
+like what it claims to be, and identical-to-the-microsecond across runs reads as
+impressive determinism rather than as a warning that the clock is not measuring
+host time.
+
+**This trap contradicts earlier guidance in this repo's own README.** Trap #2
+says to quote the probe's self-reported elapsed rather than harness wall time.
+That is correct for **native** runs, where it usefully strips interpreter
+startup, and **wrong for machine runs**, where it strips reality. README
+corrected.
+
+**Resolution:** native side uses the probe's self-reported elapsed; machine side
+uses host wall time. Never mix them. `machine-run.sh` reports both, labelled.
+
+This is a general trap for anyone benchmarking a Cartesi Machine, independent of
+this project.
+
+---
+
+## 11. Cycle counts are exact within a configuration and sensitive outside it
+
+**Day 2.** Cycle counts are bit-exact for identical work — the two post-rebuild
+runs both burned `2,338,963,974`. But an earlier run of the *same probe*
+producing the *same payload digest* burned `2,337,038,265`.
+
+The difference: the later invocation's hygiene string added
+`MKL_NUM_THREADS=1`, making the command line longer. Longer command, more
+cycles, identical output.
+
+**What it would have done:** a reader comparing cycle counts across runs would
+see a ~1.9 million cycle delta and conclude the machine is non-deterministic.
+It is not. The payload digest was identical throughout.
+
+Same species as #10: a number that looks like it measures one thing (work done)
+and quietly also measures another (command-string length).
+
+**Resolution:** cycle count is a valid determinism check **only** when the
+invocation is byte-identical. The payload digest is the primary signal; cycles
+are corroborating evidence, and any cycle delta must be explained before being
+reported as a finding. Record the exact invocation alongside any cycle count.
+
+---
+
 ## Appendix: tooling traps (not measurement confounds)
 
 **A1. Cartesi CLI version.** The live docs give `npm i -g @cartesi/cli` with no

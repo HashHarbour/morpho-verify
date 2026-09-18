@@ -80,16 +80,58 @@ build wall     726.52 s  (12:06.52)
 The machine hash should reproduce on a re-run from the same pinned inputs. It
 is not yet confirmed stable across a teardown and rebuild — that is day 2.
 
-### The boot cost is an architecture constraint
+### Boot cost — corrected on day 2
 
-4.1 billion cycles is paid in full on **every invocation**, regardless of what
-is computed. Twenty separate machine runs pay it twenty times and boot
-dominates the compute budget entirely.
+The 4.1 billion figure above is the **stock rollups dapp**: boot plus standing
+up the HTTP dispatcher and the dapp lifecycle. A plain compute invocation that
+boots, runs a command and halts is far cheaper:
 
-**Design decision:** the parameter sweep computes the whole surface inside a
-**single machine invocation** producing **one output payload**. Cheaper, and
-cleaner for the claim — one digest covering one complete experiment, rather
-than twenty digests a re-runner has to reassemble.
+```
+stock rollups dapp     4,104,636,362 cycles
+one-shot command         164,253,529 cycles     <- 25x cheaper
+```
+
+**Design decision, unchanged but downgraded from constraint to optimisation:**
+the parameter sweep computes the whole surface inside a **single machine
+invocation** producing **one output payload**. One digest covering one complete
+experiment beats N digests a re-runner has to reassemble. But at 164 M cycles
+the penalty for getting it wrong is 25x smaller than first estimated.
+
+## Day 2 — determinism gate
+
+```
+machine under test   3ba23c13384c31bcd2c931a130f8423ca87ebe2649a9dffa3957482fe74e2c61
+                     (stock template + probe.py baked in, base pinned by digest)
+payload digest       ee1eb51724efe4371b96ce19bd99a388710ed924a55db6353d9cbafe54a52321
+                     4 runs, spanning a full teardown -- all identical
+cold rebuild         882.90 s, from 0 docker images, base re-pulled by digest
+                     machine hash reproduced EXACTLY
+```
+
+The build is reproducible, not merely the execution. Full evidence in
+[determinism-log-machine.txt](determinism-log-machine.txt).
+
+### Overhead, measured
+
+```
+native amd64 (uv 3.13.2)   0.568 s    host real
+machine                   75-89 s     host wall
+machine emulated clock     8.859712 s  <- NOT host time; trap #10
+compute overhead          ~125x
+end-to-end                ~132x
+```
+
+**Not transferable to the model.** Measured on a probe deliberately built to be
+arithmetic-heavy — a 100k-element summation and three full sorts. The model is
+78,000 independent closed-form evaluations with no large reductions. Re-measure
+against the real workload before quoting an overhead figure for it.
+
+### Native vs machine
+
+5 records differ out of 834, all exactly 1 ULP, all in the erf family
+(4x `B.erfc`, 1x `B.ncdf`). Sections A, C and E — transcendental chains, every
+summation ordering, matrix reduction — are bit-identical across architectures.
+Expected behaviour, not a defect: glibc's erf is not correctly rounded.
 
 ## Native baseline interpreter
 
@@ -133,6 +175,20 @@ the Windows side.
 
 ## Status
 
-Toolchain built and baseline established. **The determinism gate itself is
-untouched — the probe has not run inside a machine.** That is day 2, and it is
-still a real unknown.
+Days 1 and 2 complete. All four exit criteria met:
+
+1. Two independent in-machine runs, identical digests.
+2. Third and fourth runs after full teardown and rebuild, identical — and the
+   machine hash itself reproduced from zero images.
+3. Emulation overhead measured: ~125x compute, ~132x end-to-end.
+4. Working numeric path confirmed in-machine (`math.erf`, subnormals intact).
+   numpy not attempted by design — zero riscv64 wheels published.
+
+**What is established:** the same machine image produces the same payload
+digest across independent runs and across a full teardown and rebuild, on this
+host.
+
+**What is not:** reproduction on hardware that is not this laptop. Three
+matching runs on one machine validates the harness. The determinism *finding*
+does not exist until day 10, when someone else's hardware reproduces it. That
+is the first real test of the central claim; everything before it is setup.

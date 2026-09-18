@@ -1,0 +1,101 @@
+====================================================================
+DAY 2 -- DETERMINISM GATE, INSIDE THE CARTESI MACHINE
+recorded 2026-09-18
+====================================================================
+
+MACHINE UNDER TEST
+  machine hash    3ba23c13384c31bcd2c931a130f8423ca87ebe2649a9dffa3957482fe74e2c61
+  base image      cartesi/python:3.13.2-slim-noble
+                  @sha256:85a4ea4c3b3f0159b4ffce8ead19a0426d061f12693c1226795fbb67ce50b436
+  guest python    3.13.2
+  probe.py        868bb295926daf4da115cb74789cb0561c726a6fd0132dc939b02c7c46704600
+                  (frozen; identical to the artifact committed in 46ee2a1)
+  invocation      cartesi-machine --flash-drive=label:root,data_filename:root.ext2
+                    --ram-length=128Mi -- "<hygiene> python3 /opt/cartesi/dapp/probe.py"
+  hygiene         PYTHONHASHSEED=0 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+                  MKL_NUM_THREADS=1 LC_ALL=C LANG=C TZ=UTC
+
+--------------------------------------------------------------------
+CRITERION 1 -- two independent runs, warm environment
+--------------------------------------------------------------------
+  run 1   ee1eb51724efe4371b96ce19bd99a388710ed924a55db6353d9cbafe54a52321
+  run 2   ee1eb51724efe4371b96ce19bd99a388710ed924a55db6353d9cbafe54a52321
+  cycles  2338963974 (identical)
+  CR-lines 0 (no TTY; clean bytes)
+  RESULT: MATCH
+
+--------------------------------------------------------------------
+CRITERION 2 -- full teardown and cold rebuild
+--------------------------------------------------------------------
+  teardown        cartesi clean; docker system prune -af
+                  3.036 GB reclaimed; images remaining: 0
+  cold rebuild    882.90 s (14:42.90)
+  base image      re-pulled by digest (the pin was exercised)
+
+  machine hash target    3ba23c13384c31bcd2c931a130f8423ca87ebe2649a9dffa3957482fe74e2c61
+  machine hash rebuilt   3ba23c13384c31bcd2c931a130f8423ca87ebe2649a9dffa3957482fe74e2c61
+  -> THE BUILD IS REPRODUCIBLE, not merely the execution.
+
+  run 3   ee1eb51724efe4371b96ce19bd99a388710ed924a55db6353d9cbafe54a52321
+  run 4   ee1eb51724efe4371b96ce19bd99a388710ed924a55db6353d9cbafe54a52321
+  RESULT: MATCH -- digest survives full teardown and rebuild
+
+--------------------------------------------------------------------
+CRITERION 3 -- emulation overhead
+--------------------------------------------------------------------
+  native amd64 (uv CPython 3.13.2)     0.568 s   host real
+  machine                             75-89 s    host wall
+  machine emulated clock               8.859712 s  <- NOT host time, see trap #10
+  boot floor                         164,253,529 cycles (one-shot command)
+  this run                         2,338,963,974 cycles  (boot = 7%)
+
+  compute overhead     ~125x
+  end-to-end           ~132x
+
+  CAVEAT: measured on a probe deliberately built to be arithmetic-heavy
+  (100k-element summation, three full sorts). The model is 78,000 independent
+  closed-form evaluations with no large reductions. 125x is the right order of
+  magnitude for planning; it is NOT transferable to the model without
+  re-measuring against the real workload.
+
+--------------------------------------------------------------------
+CRITERION 4 -- numeric path inside the machine
+--------------------------------------------------------------------
+  math.erf     CONFIRMED working in-machine, Python 3.13.2
+  subnormals   NOT flushed: erf(5e-324) -> 0x0.0000000000001p-1022
+  numpy        NOT ATTEMPTED, by design.
+               PyPI publishes 0 riscv64 files out of 4,232 for numpy.
+               pip would compile from source under emulation at ~125x.
+               stdlib is sufficient: see FALLBACK.md Level 0.
+  RESULT: satisfied -- a working numeric path exists and is confirmed.
+
+--------------------------------------------------------------------
+NATIVE (amd64) vs MACHINE (riscv64) -- expected divergence, trap #4
+--------------------------------------------------------------------
+  native   4d0229b16d20b98cca2f17de661f7353625efc23be8379ec99f952363e197419
+  machine  ee1eb51724efe4371b96ce19bd99a388710ed924a55db6353d9cbafe54a52321
+
+  5 records differ out of 834:
+      4 x B.erfc
+      1 x B.ncdf
+  Every difference is exactly 1 ULP, e.g.
+      B.ncdf[063]  0x1.aed68af0463c8p-2  ->  0x1.aed68af0463c7p-2
+      B.erfc[077]  0x1.6f5a9c2697cc7p-4  ->  0x1.6f5a9c2697cc6p-4
+
+  Sections A (exp/log/sqrt chains), C (all summation orderings incl. fsum
+  and Kahan) and E (matrix reduction) are BIT-IDENTICAL across architectures.
+  Divergence is confined entirely to the erf family.
+
+  This is expected. glibc's erf is not correctly rounded and the riscv64 and
+  amd64 implementations differ in the last place on 5 of 153 test points.
+  It is not a defect, and it does not affect the machine-to-machine claim.
+
+--------------------------------------------------------------------
+CLAIM SCOPE
+--------------------------------------------------------------------
+  Established: the same machine image produces the same payload digest across
+  independent runs and across a full teardown and rebuild, ON THIS HOST.
+
+  NOT established: reproduction on hardware that is not this laptop. That is
+  day 10, and it is the first test of the central claim.
+====================================================================
