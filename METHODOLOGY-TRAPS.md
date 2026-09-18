@@ -350,6 +350,35 @@ reported as a finding. Record the exact invocation alongside any cycle count.
 
 ---
 
+## 12. A full page is not a complete answer
+
+**Day 3.** `markets(first:1000, where:{loanAssetAddress_in:[USDC], chainId_in:[1,8453]})`
+returned exactly **1000** items — 179 Ethereum, 821 Base. That is the page cap,
+not the market set.
+
+**What it would have done:** the query looked like a complete answer and was
+used to compute a bad-debt distribution — Ethereum total $1.18M, "100%
+concentrated in RLP." That figure was one sentence from being reported as first
+contact with the concentration hypothesis.
+
+**The market most needed was the one missing.** The Aerodrome market
+(`0x5b347b3d…`), a Base USDC-loan market carrying 98,738 USDC of realized bad
+debt, was absent from those 821 Base rows. Fetched directly by id, it appears
+immediately.
+
+Same shape as #10: a number that reads as a measurement and is not. No error,
+no warning, no missing-data indicator — just a truncated set that happens to
+be internally consistent.
+
+**Resolution:** paginate via `skip`/cursor, and **assert the final page is
+shorter than the page size**. A query returning exactly its limit must be
+treated as incomplete until proven otherwise. Any aggregate computed from a
+single unpaginated page is void.
+
+This rule is rarely written down, which is what makes it worth writing down.
+
+---
+
 ## Appendix: tooling traps (not measurement confounds)
 
 **A1. Cartesi CLI version.** The live docs give `npm i -g @cartesi/cli` with no

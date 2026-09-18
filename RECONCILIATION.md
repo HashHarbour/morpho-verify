@@ -277,3 +277,95 @@ exactly the page size must never be treated as complete.
   blocks were not resolved by binary search. `creationBlockNumber` from the API
   is available per market but is indexer-sourced, not independently verified.
 - Targets B and C not yet evaluated.
+
+---
+
+# Target A — mis-specification identified, 2026-09-18
+
+Re-read of the post-mortem resolves what `49,303.14` measures. Its own
+arithmetic gives it away:
+
+> "The total loss for the lenders thereby sums up to ...
+> (11,541.64 + 72,242.78 - 34,480.95)"
+
+**`49,303.14` is NET of a 34,480.95 USDC recovery. `badDebtAssets` is GROSS.**
+They are different quantities, and the target registered one against the other.
+
+Comparing like with like — gross against gross:
+
+```
+post-mortem, iteration 1     72,242.78
+post-mortem, iteration 2     11,541.64
+post-mortem gross total      83,784.42
+
+chain, blk 30713201          72,242.449112
+chain, blk 30736355          11,544.710182
+chain gross total            83,787.159294
+
+difference                        2.739294 USDC  = 0.0033%
+```
+
+**A correctly-specified gross target would have PASSED at 0.0033%.**
+
+That does not retroactively pass Target A. Per §6.5 and §6.7 the recorded
+outcome stands: **Target A FAILED as written**, because it was written against
+the wrong quantity. The corrected target is entered below as a separate, dated
+registration, not as an edit to the original.
+
+## Target A' — registered 2026-09-18, after seeing data
+
+**Declared weaker than A by construction.** It was written with knowledge of the
+measured values and therefore cannot carry the same evidential weight. It is
+recorded for the write-up as a corrected comparison, explicitly not as a
+pre-registered test.
+
+> Sum of `badDebtAssets` over the two attack-iteration liquidations in market
+> `0x5b347b3d…` equals the post-mortem's gross figures within 0.01%.
+> **Measured: 0.0033%. PASS (post-hoc).**
+
+## Two discrepancies left open
+
+**1. The source document is internally inconsistent.** Its stated headline is
+`49,303.14`; its own arithmetic yields `49,303.47`. A 0.33 USDC gap inside one
+post-mortem. Not material here, but it is the figure the original target came
+from.
+
+**2. Transaction atomicity does not match chain data.** The post-mortem states
+both iterations occurred "within the same atomic transaction." On chain the two
+bad-debt liquidations are ~13 hours apart in different blocks:
+
+```
+blk 30713201   2025-05-25 23:29
+blk 30736355   2025-05-26 12:20
+```
+
+Unresolved. Either the post-mortem describes the attack logically rather than
+transactionally, or bad debt from the second iteration was realized later, at
+liquidation. **Recorded as unexplained rather than reconciled.**
+
+## General lesson for the write-up
+
+Published incident figures and chain state measure different quantities.
+A post-mortem reports economic loss after recovery and compensation; a protocol
+event reports gross realization at the moment it occurs. Treating them as
+interchangeable is a silent error — and is plausibly how some figures in the
+original dispute acquired their authority.
+
+# Block pinning — BLOCKED, documented
+
+```
+heads at 2026-09-18   Ethereum 26,007,249    Base 51,489,801
+```
+
+Start blocks unresolved. Public RPC archive access is gated (`eth_getCode` at
+historical blocks requires a paid token), so binary search for the deployment
+block fails. The API has `creationBlockNumber` per market but `MarketOrderBy`
+has no creation-block option, so the earliest requires full pagination — which
+is the bulk extraction job itself.
+
+**Decision:** take the indexer-sourced `creationBlockNumber` as the range
+definition and document it as indexer-defined. This weakens the independence of
+the *range definition*, not of the data. Target C's independence rests on Dune
+versus GraphQL reading the same chain, and survives intact. A re-runner with
+archive access can verify the range independently; a free RPC key with archive
+support would close it properly.
