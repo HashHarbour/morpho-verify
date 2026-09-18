@@ -250,3 +250,79 @@ That characterises a preimage rather than fitting a point, stays honest whether
 or not disclosure is complete, and produces a stronger statement: not "their
 number is reproducible" but "their number is consistent with this region and no
 other."
+
+
+---
+
+# AMENDMENT (day 5, after the sigma sweep): the section 3 decision is regime-conditional
+
+Section 3 fixed sigma rather than making it a third axis. **That decision is
+valid only in the high-LTV saturated regime, and the day-6 markets will not all
+be in it.**
+
+Measured leverage of sigma across LTV (LLTV 86%, r 4.25%, T 1 year):
+
+```
+   LTV    PD @ sigma 40%   PD @ sigma 75%   ratio      regime
+   20%          0.000373         0.092671  248.67x     LOW-PD
+   30%          0.010798         0.242645   22.47x     LOW-PD
+   40%          0.066386         0.414173    6.24x     mid
+   50%          0.198355         0.578682    2.92x     mid
+   60%          0.399661         0.724019    1.81x     mid
+   70%          0.635889         0.846976    1.33x     saturated
+   80%          0.870656         0.948439    1.09x     saturated
+```
+
+**At LTV 70%, sigma moves PD by 1.33x. At LTV 30%, by 22.5x. At LTV 20%, by
+249x.**
+
+LGD contributes exactly proportionally at every LTV -- it is a multiplier on the
+outcome, not an input to the diffusion. sigma contributes almost nothing in the
+saturated regime and **dominates LGD outright** below roughly LTV 50%.
+
+## Consequence 1: the reduces-to-one-parameter claim is conditional
+
+The day-5 result -- that the quantitative dispute reduces analytically to a
+single multiplicative parameter -- **holds at LTV 70%, which is the LTV Source A
+chose.** It does not hold generally.
+
+At typical lower LTVs, sigma carries more leverage than LGD, and a disagreement
+about volatility would matter more than a disagreement about loss given default.
+Any statement of the day-5 conclusion must carry the LTV condition with it.
+
+**This is not a claim that the LTV was chosen to produce that property.** It is
+a statement that the property is a consequence of the choice, and that readers
+of either argument cannot tell the difference without running the model.
+
+## Consequence 2: day 6 must check regime per market, before anything else
+
+**Required day-6 gate, added here:** for every market in
+`dataset-baddebt-usdc.tsv`, compute PD at the market LTV and classify the
+regime. Then:
+
+- **Saturated markets (PD > ~0.75):** the two-axis surface stands. sigma stays
+  fixed with sensitivity reported separately.
+- **Low-PD markets (PD < ~0.25):** sigma dominates. The decomposition needs a
+  **second row**, and the surface design in section 3 does not survive contact
+  with these markets.
+
+If a material share of markets falls in the low-PD regime, the section 3
+decision must be revisited **before** the surface is built, not after.
+
+## Consequence 3: guard on the combined figure
+
+The combination sigma 40% with LGD 0.3% giving **19.08 bps**, inside the
+observed 0-20 bps band, is the most attackable result in the project. It is
+recorded with the following constraints, which must travel with it everywhere:
+
+- Those values were **selected as defensible, not derived.** Nothing in this
+  work measures either of them.
+- **The same model at sigma 75% and LGD 5% gives 423.5 bps.** Both figures come
+  from one implementation and one set of equations.
+- **Nothing here establishes which parameter set is correct.**
+- The claim is that **the observed band is reachable under defensible inputs**.
+  It is **not** that observed rates are justified, adequate, or correct.
+
+The distinction matters because the moment this reads as advocacy, the work
+stops being a referee and becomes a participant. The scope lock in section 4
+exists for the same reason.
