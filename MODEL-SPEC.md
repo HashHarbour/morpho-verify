@@ -133,22 +133,120 @@ verified.
 4. Native Monte Carlo agrees with the closed form within its own sampling error.
 5. The vault-versus-market scope decision recorded in writing. (Section 4, done.)
 
-## 8. Open before the acceptance test can run
+## 8. Parameters, sourced from primary sources (resolved)
 
-**The full parameter sets are not yet in hand.** Known targets are output and
-input pairs only:
+Taken from the primary publications, not from secondary coverage. Secondary
+coverage is what produced three failed targets on days 3-4.
 
-- Undercompensation of **5-10x** at a stated **LGD around 5%**.
-- Counter-argument: **LGD of a few basis points** brings output in line with
-  observed **3-30 bps**.
+### Source A: dirtroads DR #68, "The Physics of On-Chain Lending"
 
-Reproducing either requires the complete set, V0/D or LTV, sigma, r, T, as each
-side stated them. **These must be sourced from the published arguments before
-the acceptance test is meaningful, and must not be inferred backwards from the
-target outputs.** Fitting parameters until the published answer appears would
-invert the test: it would prove only that the model has enough freedom to hit
-any number.
+**Five distinct model specifications, not one.** Reproducing "the" headline
+requires naming which.
 
-If a side did not state a parameter, that is itself a finding and is recorded
-as such. An argument whose inputs cannot be fully reconstructed is an argument
-that cannot be independently checked.
+| # | Specification | Output |
+|---|---|---|
+| 1 | Passive borrower, no rebalancing | PD 70-80%, spread > 400 bps |
+| 2 | Continuous rebalancing, infinite capital | 45 bps, described as irreducible floor |
+| 3 | Limited rebalancing, 20% extra capital | 350 bps (via Monte Carlo) |
+| 4 | Limited rebalancing, 100% extra capital | 130 bps |
+| 5 | Discrete daily rebalancing | 250-400 bps |
+
+Shared parameters (Scenario 1, carried through):
+
+```
+collateral       ETH
+LTV              70%
+LLTV             86%
+sigma            75%
+r                4.25%
+T                1 year
+LGD              5%          "approximated by the liquidation incentive"
+lambda           1.5 / year  jump intensity
+mean jump        -8.3%
+```
+
+**Two structural points the day-5 spec did not anticipate:**
+
+1. **Scenario 1 is jump-diffusion, not pure Black-Cox.** Section 1 of this spec
+   assumes geometric Brownian motion. That covers Scenario 2 at best. Any claim
+   to reproduce Scenario 1 requires the jump component (lambda, mean jump size).
+2. **Scenarios 3 and 4 were produced by Monte Carlo.** Reproducing them requires
+   MC natively. This does not breach the day-1 guard, which is about the
+   production workload inside the machine, but it does mean two of the five
+   targets are not closed-form reproducible by construction.
+
+### Source B: adcv.xyz, "Onchain lending is repo (not a put sale)"
+
+```
+LLTV                     86%
+collateral at barrier    1 / 0.86 = 1.163x debt
+after liquidator cut     1.105x debt
+buffer                   14 percentage points, LLTV to insolvency
+proposed LGD             0.3-0.5%   (vs 5%)
+output with that LGD     3-30 bps, "in line with observed rates"
+```
+
+Empirical claim, directly checkable against the day-3/4 dataset:
+
+> Across all Steakhouse-curated Prime Morpho vaults, on all chains, across all
+> LTVs, since January 2024: **19,228 liquidation events. Half a billion dollars
+> in repaid debt. Two dollars and thirteen cents of bad debt.**
+
+## 9. The acceptance test was mis-specified. The disagreement has two layers.
+
+The day-5 plan assumed both sides run the same model with different LGD, so
+reproducing both would locate the entire disagreement in parameters. **That is
+wrong**, and the reason is itself a finding.
+
+Source B does not accept the mapping in section 1 of this spec. It argues
+on-chain lending is structurally a **repurchase agreement**, that what repo
+lenders price is **gap risk**, and that the Merton decomposition, while
+mathematically valid, is "somewhat unfalsifiable" because it "ignores the margin
+call mechanism that truncates the exposure continuously":
+
+> "By this logic, every repo lender on Wall Street is selling puts on
+> Treasuries and every mortgage lender is selling puts on housing."
+
+That is a rejection of the model mapping, not a parameter choice.
+
+**Restructured test.** Decompose the gap:
+
+- **Parametric layer.** Same model, LGD 5% versus 0.3-0.5%. **Settleable by
+  this harness.** Report how much of the spread gap closes on LGD alone.
+- **Structural layer.** Put-sale versus repo. **Not settleable by any harness.**
+  No verifiable computation adjudicates whether a CDP is a short put or a repo.
+  Report what survives at **any** parameterization.
+
+This is a sharper result than "both sides reproduced," and it is honest about
+what verifiable computation can and cannot settle. Report both numbers.
+
+## 10. An arithmetic discrepancy in the headline, recorded not resolved
+
+Source A states observed depositor rates of **0-20 bps** against a required
+**250-400 bps**, and characterises the gap as **5-10x**.
+
+That pair does not yield 5-10x:
+
+```
+250 / 20 = 12.5x        400 / 20 = 20x        250 / 0 = undefined
+```
+
+A 5-10x multiple against 250-400 bps implies an observed rate near **40 bps**,
+not 0-20 bps. Either the multiple is computed against a different observed
+figure, or against a different specification of the five.
+
+**Recorded as a discrepancy, not resolved, and not assumed away.** Before any
+claim to have reproduced the headline, the specification and observed rate that
+actually produce 5-10x must be identified. Same discipline as Target A on day 3:
+the published figure and the arithmetic behind it are different quantities until
+shown otherwise.
+
+## 11. Fallback if a parameter is undisclosed
+
+Do **not** infer a missing parameter backwards from the target output. Instead
+**map the region of parameter space consistent with the published result**.
+
+That characterises a preimage rather than fitting a point, stays honest whether
+or not disclosure is complete, and produces a stronger statement: not "their
+number is reproducible" but "their number is consistent with this region and no
+other."
