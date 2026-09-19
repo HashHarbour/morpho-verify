@@ -1,6 +1,6 @@
 # Day 9 results: correction, recovery, and the quantified headline
 
-## 1. CORRECTION -- trap 14 as committed in 350af38 was WRONG
+## 1. CORRECTION -- trap 14 as committed in f1e6ef1 was WRONG
 
 Day 8 recorded that the API index is inconsistent across filter paths. **That
 attribution is false and is retracted here rather than quietly amended.**

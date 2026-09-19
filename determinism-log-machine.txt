@@ -9,7 +9,7 @@ MACHINE UNDER TEST
                   @sha256:85a4ea4c3b3f0159b4ffce8ead19a0426d061f12693c1226795fbb67ce50b436
   guest python    3.13.2
   probe.py        868bb295926daf4da115cb74789cb0561c726a6fd0132dc939b02c7c46704600
-                  (frozen; identical to the artifact committed in 46ee2a1)
+                  (frozen; identical to the artifact committed in 4edf1a0)
   invocation      cartesi-machine --flash-drive=label:root,data_filename:root.ext2
                     --ram-length=128Mi -- "<hygiene> python3 /opt/cartesi/dapp/probe.py"
   hygiene         PYTHONHASHSEED=0 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1

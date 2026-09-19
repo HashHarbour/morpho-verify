@@ -5,8 +5,8 @@ corrected in the open rather than amended away.
 
 ## C1. Trap 14 was misattributed -- retracted
 
-Committed in 350af38 as an API index inconsistency. **It was my pagination
-loop.** Retracted in d940903. The data source returns the events correctly
+Committed in f1e6ef1 as an API index inconsistency. **It was my pagination
+loop.** Retracted in 74f1492. The data source returns the events correctly
 under hash, timestamp and badDebt filters.
 
 ## C2. A payload header that misstated its own artifact
@@ -27,7 +27,7 @@ heads is the exact failure this project exists to document, occurring in my own
 serializer.** The header is now read back from the module global after it is
 set, so it reports what was used rather than what was requested.
 
-Fixed in e15eec7, verified output-preserving: the reference path at
+Fixed in 427bffa, verified output-preserving: the reference path at
 10,000/20260918 reproduces the prior body byte for byte,
 `2bf17029140628704edbcdf8b25522a98ff1ef112beaaae19522cf3f806fccfc`.
 
@@ -97,3 +97,52 @@ to run this. A 13.6-hour emulated run is a serious favour to ask; a 37-minute
 one is not. The reproducibility claim is worth exactly as much as the number of
 people willing to test it, and run length taxes that directly. This is a
 deliberate design choice, not a limitation.
+
+
+## C5. An identity leak in a file whose purpose was to be evidence
+
+The pre-publication identity check found a real local path in
+`determinism-log.txt`, line 5 -- a captured command line from the day-1 native
+validation run, containing the operating-system username.
+
+It was in the **root commit**. Redacting it in a later commit would not have
+removed it; `git log -p` recovers anything ever committed. The history was
+therefore rewritten with `git-filter-repo --replace-text` before publication,
+replacing the path with `[redacted-local-path]`.
+
+```
+  before   command : 'C:\Users\user\...\python.exe' probe.py --sum-n 100000
+  after    command : '[redacted-local-path]\python.exe' probe.py --sum-n 100000
+```
+
+**What survived, verified after the rewrite:**
+
+```
+  authorship           HashHarbour, sole author and committer
+  timezone offsets     +0000 throughout
+  commit ordering      root commit still the probe and harness, dated first
+  hash chain           probe.py 868bb295... still matches the digest recorded
+                       inside determinism-log.txt
+  dataset hash         54e7610b... unchanged
+  full-history scan    zero occurrences of the username or any local path
+```
+
+**What changed:** all 34 commit hashes. Five cross-references in
+`CORRECTIONS.md`, `DAY9-RESULTS.md` and `determinism-log-machine.txt` were
+updated in the same commit that records this.
+
+### Why this one is worth stating in the write-up
+
+The leak was in a file **produced specifically to be evidence**, on the same day
+the pseudonymous identity was configured precisely to avoid this. Git config
+protects authorship and email. It does nothing about the **contents** of
+captured command lines, logs and screenshots -- which is exactly the surface a
+verifiable-computation artifact generates most of.
+
+That gap was flagged on day 1 and still produced a leak nine days later. It is
+the third self-caught error in this project and the only one with a real-world
+consequence attached, and it argues that identity hygiene needs a content scan
+over the full history, not just a `git config` check.
+
+The redaction was done at the last moment it was free. After publication, a
+rewrite costs every external reference to every hash.
