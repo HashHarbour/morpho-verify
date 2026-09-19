@@ -59,3 +59,41 @@ not already in hand.
 resample count. Published intervals come from higher-resample native runs; the
 verified digest covers point estimates and coarser intervals, and the header
 states which.
+
+
+## C4. Resample count: verified and published are the same artifact
+
+The write-up intervals must be the intervals the machine digest covers, or a
+re-runner reproduces something other than what was published.
+
+Interval stability against the 10,000-resample reference:
+
+```
+   boot   native   emulated   max interval dev   agree at 1dp
+    100    17.7s      37 min         4.211 pp          0 / 60
+    500    34.9s      73 min         3.831 pp          2 / 60
+   1000    53.5s     111 min         2.315 pp          0 / 60
+   2000    95.2s     198 min         1.426 pp          4 / 60
+  10000   393.0s    13.6 hours       reference
+```
+
+Bootstrap error falls as 1 / sqrt(B), so there is no tractable middle. The
+choice is 37 minutes with intervals that differ by up to 4 pp from a
+high-resample estimate, or 13.6 hours.
+
+**Decision: boot = 100, published and verified.**
+
+The reason it is not a compromise: **all 60 point estimates are identical at
+every resample count.** The surface spread of 5.42% to 99.95%, the 431.5x
+conditional-to-unconditional ratio, and the 18.3 bps unconditional rate do not
+depend on the bootstrap at all. Only interval widths do.
+
+A 100-resample interval is not a wrong interval. It is a wider, noisier
+estimate of the same quantity, and it is published with its resample count in
+the payload header so nobody has to guess.
+
+**And the deciding argument is about day 10.** Verification requires a stranger
+to run this. A 13.6-hour emulated run is a serious favour to ask; a 37-minute
+one is not. The reproducibility claim is worth exactly as much as the number of
+people willing to test it, and run length taxes that directly. This is a
+deliberate design choice, not a limitation.
