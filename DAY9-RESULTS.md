@@ -111,3 +111,77 @@ this, and it follows from neither published figure taken alone.
 - Conditional severity of 78.9% is pooled across both chains and is dominated
   by one event; the day-8 surface shows it ranges 5.42% to 99.95% across
   defensible choices.
+
+
+---
+
+## 5. GUARD on the 18.3 bps finding -- the most attackable claim in the artifact
+
+The finding: **the measured unconditional loss rate of 18.3 bps sits at the top
+of the observed 0 to 20 bps depositor band.** Depositors are receiving
+approximately the realized unconditional loss rate.
+
+**This is backward-looking and it does not answer the question Source A asked.**
+
+```
+  what 18.3 bps IS      a realized loss rate, over a specific window,
+                        on a specific market set, that already happened
+
+  what it is NOT        a forward-looking risk premium
+                        an estimate of what depositors SHOULD be paid
+                        evidence about a tail that has not occurred
+```
+
+Source A argues about compensation for **bearing tail risk**. A realized rate
+over roughly eighteen months of history says nothing about a tail event that
+has not happened yet. A book can be paid exactly its realized losses for years
+and still be underpaid for the risk it carries, and nothing in this measurement
+distinguishes those two states.
+
+The day-8 surface makes the same point from the other side: conditional severity
+ranges from 5.42% to 99.95% across defensible tail treatments, and Ethereum
+carries 99.7% of its bad debt in a single event. **A distribution dominated by
+one observation has almost no information about its own tail.**
+
+So the honest statement is narrow:
+
+> Over the measured window, realized unconditional loss and observed depositor
+> compensation are of the same order. Whether that compensation is adequate for
+> the risk borne is not a question this measurement can answer.
+
+That limitation is stated here, in the same section as the finding, rather than
+as a footnote -- because the finding is strong enough to be quoted without it,
+and quoting it without this paragraph would misrepresent what was measured.
+
+
+---
+
+## 6. Re-verification of the three affected extractions: ALL UNCHANGED
+
+Re-run with paginate-until-empty, the corrected assertion:
+
+```
+  markets (USDC-loan)    old  3,904   new  3,904   delta +0   41 pages
+  vaults                 old    980   new    980   delta +0   11 pages
+  cbBTC positions        old 10,100   new 10,100   delta +0   skip ceiling
+```
+
+**No figure moved.** The day-6 regime gate, the day-7 convexity measurement, and
+the day-6 vault and $2.13 findings all stand as published.
+
+### Why the unsound assertion happened to hold there
+
+markets and vaults are **single unchunked queries**. Each terminated with one
+short page followed by an empty page -- a genuine end-of-results.
+
+The liquidations extraction was **chunked by month**, and short pages occurred
+**mid-stream** within high-volume chunks. That is the case the assertion cannot
+distinguish, and it is why the failure appeared there and not elsewhere.
+
+**The correction stands regardless of the outcome.** A short page proves nothing
+about exhaustion; these three were verified, not excused. Had they moved, the
+regime gate and convexity number would have moved with them, and the check cost
+minutes against a digest that would have baked the error in permanently.
+
+Paginate-until-empty is now the standing rule for every extraction in this
+project, and `machine-run.sh` and the extraction scripts reflect it.
