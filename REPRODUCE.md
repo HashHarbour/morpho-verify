@@ -69,7 +69,7 @@ Extract the payload and hash it. The payload is bounded by its own delimiters,
 because stdout and stderr share one console inside the machine:
 
 ```bash
-sed -n '/^# surface-version/,/^# records'/p run.txt > payload.txt
+sed -n '/^# surface-version/,/^# records/p' run.txt > payload.txt
 sha256sum payload.txt
 ```
 
