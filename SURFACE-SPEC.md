@@ -124,3 +124,64 @@ exposure is unpriced, so any denominator drawn from exposure rather than from
 liquidation flow inherits that problem. The primary LGD definition uses
 liquidation flow specifically for this reason. The secondary loss rate does not,
 and carries the caveat.
+
+
+---
+
+# AMENDMENT (before the first cell is computed)
+
+## A1. Parameter set: measured primary, Source A as reference column
+
+Spread depends multiplicatively on LGD, sigma and LTV, and these do not
+decompose. The same tail treatment produces a different absolute spread change
+at cbBTC measured parameters than at Source A parameters. A cell is therefore
+not a reading; it is a point on an interacting product.
+
+**Decision: measured parameters are primary. Source A parameters appear as a
+single reference column, not as a parallel grid.**
+
+```
+  PRIMARY     LTV 46.9%   sigma 44.8%    cbBTC/USDC, both measured
+              (10,100 positions; 365 daily closes)
+
+  REFERENCE   LTV 70.0%   sigma 75.0%    Source A stated parameters
+```
+
+Rationale, recorded now: the measured set describes the market that actually
+carries the exposure, so it is the honest basis for a spread figure. The
+reference column preserves comparability with the published argument, without
+doubling the grid to 60 cells and burying the result.
+
+**Both columns are reported for every cell.** Neither is dropped.
+
+## A2. The asymmetry the surface exists to expose
+
+```
+  LTV     MEASURED   10,100 positions, 95.79% coverage
+  sigma   MEASURED   365 daily closes, independent price source
+  LGD     SELECTED   no empirical derivation by either side
+```
+
+**The parameter with the least empirical grounding is the one carrying the
+entire public argument.** That asymmetry is stated in the surface, not left for
+a reader to infer.
+
+## A3. Every cell carries an event count and an uncertainty interval
+
+611 bad-debt rows, heavily concentrated, across three granularities and five
+treatments. Some cells will rest on a handful of events and some on hundreds.
+A bare point estimate renders a three-event cell as authoritative as a
+three-hundred-event one.
+
+**Required per cell:** point estimate, event count n, and a bootstrap 90%
+interval (10,000 resamples, p5 and p95). A cell whose interval spans two orders
+of magnitude is reported with that interval intact.
+
+## A4. Degenerate cells are results, not errors
+
+Ethereum carries 99.7% of its USDC bad debt in one event. Drop-largest at chain
+granularity therefore removes essentially all of it and returns LGD near zero.
+
+**That cell is reported.** It is the concentration finding stated numerically:
+at chain granularity, one tail event is the entire empirical basis for the
+disagreement. No cell is dropped for being degenerate, unstable or awkward.
