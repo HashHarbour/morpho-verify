@@ -53,7 +53,83 @@ def apply_tail(events, treatment):
     return events          # T4 and T5 act at aggregation, not on the set
 
 
-def bootstrap_ci(events, stat, n=BOOT, seed=SEED):
+FAST = True   # set False to use the reference implementation (see EQUIVALENCE)
+
+
+def _prep(events):
+    """Flatten to arrays once. bd and rp are raw integer units, so the
+    per-market and per-chain sums are EXACT integer arithmetic regardless of
+    order; only the final divisions are floating point. The EVENT statistic
+    sums floats and therefore depends on order, which the fast path preserves
+    exactly by consuming resample indices in the same sequence."""
+    bd = [e["bd"] for e in events]
+    d = [e["bd"] + e["rp"] for e in events]
+    evl = [(b / x) if x else float("nan") for b, x in zip(bd, d)]
+    mkeys = {}
+    mi = []
+    for e in events:
+        k = mkeys.setdefault(e["market"], len(mkeys))
+        mi.append(k)
+    return bd, d, evl, mi, len(mkeys)
+
+
+def bootstrap_ci_fast(events, gran, n=None, seed=None):
+    """Same draws, same order, same arithmetic -- no per-resample dict or
+    list-of-dicts construction. Equivalence to the reference path is asserted
+    in EQUIVALENCE.md and re-checkable via equivalence_check.py."""
+    if n is None:
+        n = BOOT
+    if seed is None:
+        seed = SEED
+    k = len(events)
+    if k < 2:
+        return (float("nan"), float("nan"))
+    bd, d, evl, mi, nm = _prep(events)
+    rng = random.Random(seed)
+    mk_bd = [0] * nm
+    mk_d = [0] * nm
+    seen = [False] * nm
+    vals = []
+    rr = rng.randrange
+    for _ in range(n):
+        idx = [rr(k) for _ in range(k)]
+        if gran == "CHAIN":
+            tb = 0; td = 0
+            for i in idx:
+                tb += bd[i]; td += d[i]
+            v = (tb / td) if td else float("nan")
+        elif gran == "EVENT":
+            s = 0.0; c = 0
+            for i in idx:
+                if d[i]:
+                    s += evl[i]; c += 1
+            v = (s / c) if c else float("nan")
+        else:  # MARKET -- equal weight, markets in first-appearance order
+            order = []
+            for i in idx:
+                m = mi[i]
+                if not seen[m]:
+                    seen[m] = True; order.append(m); mk_bd[m] = 0; mk_d[m] = 0
+                mk_bd[m] += bd[i]; mk_d[m] += d[i]
+            s = 0.0; c = 0
+            for m in order:
+                if mk_d[m]:
+                    s += mk_bd[m] / mk_d[m]; c += 1
+                seen[m] = False
+            v = (s / c) if c else float("nan")
+        if v == v:
+            vals.append(v)
+    if not vals:
+        return (float("nan"), float("nan"))
+    vals.sort()
+    return (vals[int(0.05 * len(vals))], vals[int(0.95 * len(vals)) - 1])
+
+
+def bootstrap_ci(events, stat, n=None, seed=None):
+    if n is None:
+        n = BOOT
+    if seed is None:
+        seed = SEED
     if len(events) < 2:
         return (float("nan"), float("nan"))
     rng = random.Random(seed)
@@ -104,7 +180,10 @@ def cell(events, gran, treat, chain=None):
             return sum(vs) / len(vs) if vs else float("nan")
 
     point = stat(ev)
-    lo, hi = bootstrap_ci(ev, stat)
+    if FAST:
+        lo, hi = bootstrap_ci_fast(ev, gran)
+    else:
+        lo, hi = bootstrap_ci(ev, stat)
 
     if treat == "T4":
         # bootstrap treatment reports the resample median as its point
