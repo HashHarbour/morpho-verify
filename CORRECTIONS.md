@@ -146,3 +146,23 @@ over the full history, not just a `git config` check.
 
 The redaction was done at the last moment it was free. After publication, a
 rewrite costs every external reference to every hash.
+
+
+## C6. A fix applied once that did not generalise
+
+On day 1 the root commit was amended to drop a trailer that had been added
+without being asked for. The amend worked. **It was never applied to anything
+else**, and the trailer then appeared on the next 34 commits unnoticed for nine
+days -- surfacing only when the repository was viewed as a reader would see it,
+rather than through the local log.
+
+Same species as the other two errors logged today. A local fix verified at the
+point of application, never checked for whether it generalised, and caught only
+by looking at the artifact from outside rather than from within the working
+copy.
+
+The trailer itself is accurate and has been kept; it is noted in the README
+rather than removed, because stripping a true authorship record from a
+repository whose argument is that claims should be checkable would cut against
+that argument. The correction being logged here is the process failure, not the
+trailer.

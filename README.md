@@ -129,6 +129,12 @@ it could fail. They are recorded in **[CORRECTIONS.md](CORRECTIONS.md)** rather
 than quietly amended, including a retracted claim that a data source was at
 fault when the defect was mine.
 
+This work was done with AI assistance; the commit history records it. Every
+claim here is independently checkable, which is the point -- the specifications
+were committed before the work they govern, the failed gates are recorded
+alongside the passing ones, and the whole computation reproduces in twenty
+minutes on hardware other than mine.
+
 Known-open items are listed at the end of
 [WRITEUP-INVENTORY.md](WRITEUP-INVENTORY.md). The most material: denominator
 completeness cannot be verified by the method that validated the numerator, one
