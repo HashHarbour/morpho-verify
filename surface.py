@@ -53,7 +53,10 @@ def apply_tail(events, treatment):
     return events          # T4 and T5 act at aggregation, not on the set
 
 
-FAST = True   # set False to use the reference implementation (see EQUIVALENCE)
+FAST = False  # DISABLED. The fast path FAILED the equivalence check at all six
+              # configurations (equivalence_check.py) with working plumbing. It is
+              # retained, unused, so the failure is reproducible. Do not enable it
+              # without a passing equivalence proof.
 
 
 def _prep(events):
