@@ -91,6 +91,12 @@ count is deliberately low so this run takes twenty minutes rather than thirteen
 hours. Point estimates are identical at every resample count tested; only
 interval widths change.
 
+**Your cycle count may differ and that is fine.** Cycle counts are exact within
+a fixed invocation but sensitive to the exact command string, including
+whitespace. A clean-room run here reported 49,587,668,669 against 49,587,668,657
+for a byte-identical payload. **The payload digest is the claim; the cycle count
+is not.**
+
 ## Triage -- what your result means
 
 | Symptom | Meaning |

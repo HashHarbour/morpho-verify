@@ -166,3 +166,57 @@ rather than removed, because stripping a true authorship record from a
 repository whose argument is that claims should be checkable would cut against
 that argument. The correction being logged here is the process failure, not the
 trailer.
+
+
+## C7. Nine days of verification that never tested the published instructions
+
+The repository told a reader to run `cartesi build`. **The Dockerfile was not in
+the repository.** Neither was `dapp.py`, which the Dockerfile copies, nor
+`requirements.txt`. A stranger following REPRODUCE.md would not have produced a
+wrong hash -- the build would have failed outright on a missing COPY source.
+
+Found by the first outsider who looked, on day 10.
+
+### The root cause is worse than the missing files
+
+The machine was built all week from `~/probe-test`, a directory separate from
+the repository. Every verification run in this project -- the day-2 determinism
+gate, the cold-rebuild reproduction, the day-9 in-machine surface run that
+produced the published digests -- executed against **that directory**, never
+against a fresh clone of the published instructions.
+
+The repository was, in effect, write-only: a place results were recorded, not a
+thing that was ever exercised. Every check passed, and every check was testing
+local state rather than the claim.
+
+**This is the most instructive error in this file.** The others were wrong
+numbers or wrong attributions. This one was an error in what the word
+"verified" meant. A test that runs from inside the working state cannot
+distinguish a reproducible artifact from a directory that happens to work.
+
+### The fix, and what it does and does not establish
+
+Committed in ece055f, followed by a clean-room test: fresh clone into a new
+directory, REPRODUCE.md executed exactly as written.
+
+```
+  dataset sha256   54e7610b...   match
+  machine hash     7ab6f269...   match
+  payload sha256   dbdcbb34...   match, byte-identical to the committed artifact
+```
+
+**What this establishes:** the repository is now self-sufficient. The published
+instructions, run against a clean checkout, produce the published hashes.
+
+**What it does not establish:** host independence. This ran on the same
+machine, same Docker, same BuildKit, same x86-64 architecture. A third-party
+reproduction is still the untested claim, and an Apple Silicon result remains
+the most valuable single data point available.
+
+### One observation for verifiers
+
+The clean-room run reported **49,587,668,669** cycles against the day-9 run
+**49,587,668,657** -- a difference of 12, with a byte-identical payload. The
+invocation whitespace differed between the two runs. This is trap 11 recurring:
+cycle counts are exact within a fixed invocation and sensitive to the command
+string outside it. **The payload digest is the claim; the cycle count is not.**
