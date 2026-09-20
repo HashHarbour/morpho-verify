@@ -1,6 +1,6 @@
 # Two people disagreed by 12.5×. Both were right.
 
-In 2026, two careful analyses of Morpho reached opposite conclusions about whether depositors are paid enough for the credit risk they carry.
+Two careful analyses of Morpho, the onchain lending protocol, reached opposite conclusions about whether depositors are paid enough for the credit risk they carry.
 
 One, working from a Black-Cox structural credit model, concluded depositors are undercompensated — required spreads of 250–400 basis points against observed rates near zero. The other argued the model's loss-given-default parameter was set roughly an order of magnitude too high, and that correcting it brings the model into line with what depositors actually receive.
 
@@ -115,7 +115,7 @@ machine hash     7ab6f269e574d84588b9175991d5f6d2e0531b46e8103d696e4d0831a7c4ac7
 payload sha256   dbdcbb34b4eca122b621c5f802c8526221013add7ed2439ca606b395c53833de
 ```
 
-Fresh clone, one build, one run, about twenty minutes. Instructions and a failure-triage table are in the repo.
+Fresh clone, one build, one run, about twenty minutes. Instructions and a failure-triage table are in [REPRODUCE.md](https://github.com/HashHarbour/morpho-verify/blob/main/REPRODUCE.md).
 
 **What I have not established: host independence.** The clean-room ran on my own machine — same Docker, same architecture. Whether the build reproduces on different hardware is untested, and an Apple Silicon result would be the single most useful thing anyone could contribute. A failed reproduction with good diagnostics is worth more to me than a successful one without.
 
@@ -125,4 +125,4 @@ This work was done with AI assistance; the commit history records it. Every clai
 
 ---
 
-*Repository: [morpho-verify](https://github.com/HashHarbour/morpho-verify). Prior art: the undercompensation analysis in dirtroads DR #68, the counter-argument at adcv.xyz, and `badin-feio/morpho-usdc-yield-research`, which computes credit loss over an overlapping window via Dune — an independent cross-check against it is specified but not yet run.*
+*Repository: [morpho-verify](https://github.com/HashHarbour/morpho-verify). Prior art: the undercompensation analysis in [dirtroads DR #68](https://dirtroads.substack.com/p/68-the-physics-of-on-chain-lending), the counter-argument at [adcv.xyz](https://www.adcv.xyz/p/onchain-lending-is-repo-not-a-put), and [badin-feio/morpho-usdc-yield-research](https://github.com/badin-feio/morpho-usdc-yield-research), which computes credit loss over an overlapping window via Dune — an independent cross-check against it is specified but not yet run.*
