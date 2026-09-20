@@ -55,9 +55,9 @@ comes from.
 Both sides may be internally correct about different quantities. Neither
 publication states which it is using.
 
-**And the measured unconditional loss rate, 18.3 bps, sits at the top of the
-observed 0 to 20 bps depositor band.** This is a *backward-looking realized rate
-over the measured window*, not a forward-looking risk premium. A book can be
+**Measured over this window, the realized unconditional loss rate of 18.3 bps
+sits at the top of the observed 0 to 20 bps depositor band.** That is a realized
+rate, not a forward-looking risk premium. A book can be
 paid exactly its realized losses for years and still be underpaid for the risk
 it carries, and this measurement cannot distinguish those states, especially
 given that one chain carries 99.7% of its bad debt in a single event, so the

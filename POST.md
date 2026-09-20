@@ -44,7 +44,7 @@ The reason is in the middle row: only **2.22%** of liquidations produce any bad 
 
 Both sides may be internally correct about different quantities. Neither publication states which it is using, and I don't think either author would disagree that they're different measurements — it's simply that nothing in the exchange required anyone to say so.
 
-One more figure, with its limits attached. **The measured unconditional loss rate of 18.3 bps sits at the top of the observed 0–20 bps depositor band.** That is a *backward-looking realized rate over the measured window*, not a forward-looking risk premium. A book can be paid exactly its realized losses for years and still be underpaid for the risk it carries, and this measurement cannot distinguish those two states. One chain carries 99.7% of its bad debt in a single event, so the distribution has almost no information about its own tail. Whether the compensation is adequate is not a question this answers, and I want to be clear that I'm not claiming it does.
+One more figure, with its limits attached. **Measured over this window, the realized unconditional loss rate of 18.3 bps sits at the top of the observed 0–20 bps depositor band.** That is a realized rate, not a forward-looking risk premium. A book can be paid exactly its realized losses for years and still be underpaid for the risk it carries, and this measurement cannot distinguish those two states. One chain carries 99.7% of its bad debt in a single event, so the distribution has almost no information about its own tail. Whether the compensation is adequate is not a question this answers, and I want to be clear that I'm not claiming it does.
 
 ## Published figures and chain state diverge on four axes
 
