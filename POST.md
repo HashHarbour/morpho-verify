@@ -24,11 +24,11 @@ The substantive claim holds. Bad debt in that book is essentially zero.
 
 The cent-level figure doesn't reproduce exactly, and the reason is scope rather than error: I used *current* allocations against a since-January-2024 claim, and summed *market-level* rather than vault-attributed bad debt. Resolving that needs MetaMorpho allocation history, which I didn't extract.
 
-I'm leading with this deliberately. Everything below is a divergence between published figures and chain state, and a reader who meets five of those before seeing a single confirmation would reasonably suspect the method manufactures disagreement. It doesn't. When a figure is right, it comes out right.
+I'm leading with this deliberately. Everything below is a divergence between published figures and chain state, and a reader who meets five of those before seeing a single confirmation would reasonably suspect the method manufactures disagreement. That is evidence it doesn’t. When a figure is right, it comes out right.
 
 ## The disagreement is definitional
 
-Loss given default is the parameter both sides argue about. One uses roughly 5%; the other argues for a few basis points.
+Loss given default is the parameter both sides argue about. One uses roughly 5%. The other proposes setting it “a few bps over 0%”, and shows that even at a conservative 0.3–0.5% the model outputs 3–30 bps, in line with observed rates. The comparisons below use his conservative end, which is the reading least favourable to my own headline.
 
 So I computed it from the realized record — same formula, two event sets:
 
@@ -38,7 +38,7 @@ CONDITIONAL     across the 606 that produced bad debt   78.9195%
                                                          ratio     431.5×
 ```
 
-**The two definitions differ by 431.5×. The published disagreement spans 12.5×.** The definitional gap is about thirty-four times the size of the argument.
+**The two definitions differ by 431.5×. The published disagreement spans 12.5× to 20×**, depending on whether you take the 250 or 400 bps end of the required-spread range against observed rates near 20 bps. Depending on which end of the published spread range you take, the definitional gap is between about twenty and about thirty-four times the size of the argument.
 
 The reason is in the middle row: only **2.22%** of liquidations produce any bad debt at all. Loss *given default* — conditional on a liquidation having gone bad — is severe, tens of percent. Loss across *all* liquidation flow, including the overwhelming majority that recover fully, is single-digit basis points. Same underlying events, two legitimate questions, answers two orders of magnitude apart.
 
