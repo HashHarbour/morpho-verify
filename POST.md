@@ -2,7 +2,7 @@
 
 Two careful analyses of Morpho, the onchain lending protocol, reached opposite conclusions about whether depositors are paid enough for the credit risk they carry.
 
-One, working from a Black-Cox structural credit model, concluded depositors are undercompensated — required spreads of 250–400 basis points against observed rates near zero. The other argued the model's loss-given-default parameter was set roughly an order of magnitude too high, and that correcting it brings the model into line with what depositors actually receive.
+One, working from a Black-Cox structural credit model, concluded depositors are undercompensated — required spreads of 250–400 basis points against observed rates near zero. The other argued the model's loss-given-default parameter should be a few basis points rather than 5%, and that correcting it brings the model into line with what depositors actually receive.
 
 The disagreement was framed as being about one number. I re-executed both arguments from chain data to find out where it actually lives.
 
@@ -28,7 +28,7 @@ I'm leading with this deliberately. Everything below is a divergence between pub
 
 ## The disagreement is definitional
 
-Loss given default is the parameter both sides argue about. One uses roughly 5%. The other proposes setting it “a few bps over 0%”, and shows that even at a conservative 0.3–0.5% the model outputs 3–30 bps, in line with observed rates.
+Loss given default is the parameter both sides argue about. One uses roughly 5%, modelled on the liquidation incentive. The other proposes setting it “a few bps over 0%” — higher, he notes, than the empirical bad-debt rate in Prime markets — and shows the model then outputs around 3–30 bps, in line with observed rates.
 
 So I computed it from the realized record — same formula, two event sets:
 
