@@ -28,7 +28,7 @@ I'm leading with this deliberately. Everything below is a divergence between pub
 
 ## The disagreement is definitional
 
-Loss given default is the parameter both sides argue about. One uses roughly 5%. The other proposes setting it “a few bps over 0%”, and shows that even at a conservative 0.3–0.5% the model outputs 3–30 bps, in line with observed rates. The comparisons below use his conservative end, which is the reading least favourable to my own headline.
+Loss given default is the parameter both sides argue about. One uses roughly 5%. The other proposes setting it “a few bps over 0%”, and shows that even at a conservative 0.3–0.5% the model outputs 3–30 bps, in line with observed rates.
 
 So I computed it from the realized record — same formula, two event sets:
 
@@ -40,7 +40,7 @@ CONDITIONAL     across the 606 that produced bad debt   78.9195%
 
 **The two definitions differ by 431.5×. The published disagreement spans 12.5× to 20×**, depending on whether you take the 250 or the 400 bps end of the required-spread range against observed rates near 20 bps. Either way, the definitional gap is between about twenty and about thirty-four times the size of the argument.
 
-The reason is in the middle row: only **2.22%** of liquidations produce any bad debt at all. Loss *given default* — conditional on a liquidation having gone bad — is severe, tens of percent. Loss across *all* liquidation flow, including the overwhelming majority that recover fully, is single-digit basis points. Same underlying events, two legitimate questions, answers two orders of magnitude apart.
+The reason is in those two counts: only 606 of 27,259 liquidations — **2.22%** — produce any bad debt at all. Loss *given default* — conditional on a liquidation having gone bad — is severe, tens of percent. Loss across *all* liquidation flow, including the overwhelming majority that recover fully, is single-digit basis points. Same underlying events, two legitimate questions, answers two orders of magnitude apart.
 
 Both sides may be internally correct about different quantities. Neither publication states which it is using, and I don't think either author would disagree that they're different measurements — it's simply that nothing in the exchange required anyone to say so.
 
