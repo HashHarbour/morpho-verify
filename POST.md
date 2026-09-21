@@ -38,7 +38,7 @@ CONDITIONAL     across the 606 that produced bad debt   78.9195%
                                                          ratio     431.5×
 ```
 
-**The two definitions differ by 431.5×. The published disagreement spans 12.5× to 20×**, depending on whether you take the 250 or 400 bps end of the required-spread range against observed rates near 20 bps. Depending on which end of the published spread range you take, the definitional gap is between about twenty and about thirty-four times the size of the argument.
+**The two definitions differ by 431.5×. The published disagreement spans 12.5× to 20×**, depending on whether you take the 250 or the 400 bps end of the required-spread range against observed rates near 20 bps. Either way, the definitional gap is between about twenty and about thirty-four times the size of the argument.
 
 The reason is in the middle row: only **2.22%** of liquidations produce any bad debt at all. Loss *given default* — conditional on a liquidation having gone bad — is severe, tens of percent. Loss across *all* liquidation flow, including the overwhelming majority that recover fully, is single-digit basis points. Same underlying events, two legitimate questions, answers two orders of magnitude apart.
 
